@@ -1,0 +1,57 @@
+src/
+├── app/                           # 🚀 EXPO ROUTER: File-based routing directory
+│   ├── _layout.tsx                # Root Layout: App-wide providers (Context, QueryClient)
+│   ├── index.tsx                  # Route: `/` - Initial Splash / Role Selection Screen
+│   │
+│   ├── (auth)/                    # Route Group: URLs ignore this folder name
+│   │   ├── _layout.tsx            # Auth Layout: Stack navigator for auth screens
+│   │   ├── login.tsx              # Route: `/login` - Hook Form + Yup validation
+│   │   └── register.tsx           # Route: `/register` - Account creation
+│   │
+│   ├── (tabs)/                    # Route Group: Bottom Tab Navigator
+│   │   ├── _layout.tsx            # Tab Layout: Defines tab bar icons and behavior
+│   │   ├── home.tsx               # Route: `/home` - Client dashboard (Search/Categories)
+│   │   ├── jobs.tsx               # Route: `/jobs` - Worker dashboard (Incoming/Active jobs)
+│   │   ├── bookings.tsx           # Route: `/bookings` - Client history & active requests
+│   │   └── profile.tsx            # Route: `/profile` - User settings & role toggles
+│   │
+│   ├── workers/                   
+│   │   └── [category].tsx         # Dynamic Route: `/workers/plumber` - List of workers
+│   │
+│   ├── worker/                    
+│   │   └── [id].tsx               # Dynamic Route: `/worker/123` - Detailed worker profile
+│   │
+│   └── book/                      
+│       └── [id].tsx               # Dynamic Route: `/book/123` - Form to request a worker
+│
+├── components/                    # 🧩 REUSABLE UI COMPONENTS
+│   ├── common/                    
+│   │   ├── PrimaryButton.tsx      # Standardized buttons
+│   │   ├── Loader.tsx             # Loading spinners
+│   │   └── ErrorText.tsx          # Form validation error messages
+│   ├── forms/                     
+│   │   └── ControlledInput.tsx    # Reusable input tied to react-hook-form
+│   └── workers/                   
+│       ├── WorkerCard.tsx         # Summary card for list views
+│       └── RatingStars.tsx        # Visual star rating component
+│
+├── hooks/                         # 🪝 CUSTOM REACT HOOKS
+│   ├── useAuth.ts                 # Manages local session state and role logic
+│   └── useLocation.ts             # Wrapper for Expo Location services
+│
+├── schemas/                       # 🛡️ YUP VALIDATION SCHEMAS
+│   ├── authSchemas.ts             # Rules for email, password strength, phone formats
+│   └── bookingSchema.ts           # Rules for dates, addresses, and issue descriptions
+│
+├── services/                      # 🔌 API & EXTERNAL INTEGRATIONS
+│   ├── apiClient.ts               # Axios instance (configured for withCredentials & CSRF)
+│   ├── authService.ts             # Login, logout, registration API calls
+│   └── jobService.ts              # Fetching workers, posting bookings, updating status
+│
+├── types/                         # 🏷️ TYPESCRIPT DEFINITIONS
+│   ├── user.ts                    # Interfaces for Client and Worker objects
+│   └── api.ts                     # Interfaces for API responses and paginated data
+│
+└── utils/                         # 🛠️ HELPER FUNCTIONS
+    ├── formatters.ts              # Currency (e.g., formatting hourly rate) and dates
+    └── session.ts                 # Logic for extracting native cookies via @react-native-cookies

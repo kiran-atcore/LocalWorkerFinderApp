@@ -1,0 +1,27 @@
+# --- Python / Backend Exclusions ---
+# Virtual environments contain thousands of library files
+backend/venv/
+# Compiled Python files
+__pycache__/
+*.pyc
+# Binary database files
+backend/db.sqlite3
+
+# --- React Native / Frontend Exclusions ---
+# Node dependencies are massive and cause severe indexing lag
+frontend/node_modules/
+# Expo cache and build artifacts
+frontend/.expo/
+# Media files (images, fonts) cannot be read as text
+frontend/assets/
+# Massive generated lock file
+frontend/package-lock.json
+
+# --- Environment & Editor Configurations ---
+# Other AI configs and editor settings
+frontend/.claude/
+frontend/.vscode/
+.env
+
+# --- Version Control ---
+.git/

@@ -1,0 +1,37 @@
+# -----------------------
+# Frontend (Expo / React Native / Node)
+# -----------------------
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+
+# Expo specific
+.expo/
+dist/
+web-build/
+
+# Native build directories (Expo CNG)
+android/
+ios/
+
+# -----------------------
+# Backend (Django / Python)
+# -----------------------
+__pycache__/
+*.py[cod]
+*$py.class
+db.sqlite3
+media/
+venv/
+env/
+.env
+
+# -----------------------
+# OS / Editor
+# -----------------------
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.log
