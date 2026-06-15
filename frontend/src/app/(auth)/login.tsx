@@ -1,54 +1,188 @@
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { useForm } from 'react-hook-form';
+import React, { useState } from 'react';
+import { View, Text, TextInput, StyleSheet, ActivityIndicator, Pressable, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { loginSchema } from '../../schemas/authSchemas';
-import { ControlledInput } from '../../components/ControlledInput';
-import { PrimaryButton } from '../../components/PrimaryButton';
-import { ErrorText } from '../../components/ErrorText';
-import { authService } from '../../services/authService';
-import { useAuth } from '../../hooks/useAuth';
-import { useRouter, Link } from 'expo-router';
+import * as Yup from 'yup';
+import api from '../../services/axios';
+import { useAuthStore } from '../../store/useAuthStore';
+import { useRouter } from 'expo-router';
+
+const loginSchema = Yup.object().shape({
+  email: Yup.string()
+    .email('Please enter a valid email address.')
+    .required('Email is required.'),
+  password: Yup.string().required('Password is required.'),
+});
 
 export default function LoginScreen() {
-  const { replace } = useRouter();
-  const setUser = useAuth((s) => s.setUser);
+  const router = useRouter();
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const [globalError, setGlobalError] = useState('');
 
-  const { control, handleSubmit, setError, formState: { isSubmitting, errors } } = useForm({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
     resolver: yupResolver(loginSchema),
-    defaultValues: { username: '', password: '' }
   });
 
   const onSubmit = async (data: any) => {
+    setGlobalError('');
     try {
-      await authService.getCSRF(); // Establish CSRF token session
-      const response = await authService.login(data);
-      setUser(response.data.user);
-      replace('/(tabs)/home' as any); // Native stack replacement
+      // Get CSRF cookie first
+      await api.get('users/csrf/');
+      // Then login
+      const response = await api.post('users/login/', data);
+
+      // Update global auth state
+      setAuth(response.data.user);
+
+      // Route to Home (handled by root index.tsx reacting to state)
+      // Or we can manually route
+      router.replace('/(tabs)/home' as any);
     } catch (error: any) {
-      setError('root', { message: error.response?.data?.detail || 'Login failed' });
+      if (error.response?.data?.non_field_errors) {
+        setGlobalError(error.response.data.non_field_errors[0]);
+      } else if (error.response?.data) {
+        setGlobalError(JSON.stringify(error.response.data));
+      } else {
+        setGlobalError('An unexpected error occurred. Please try again.');
+      }
     }
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Welcome Back</Text>
-        {errors.root ? <ErrorText message={errors.root.message} /> : null}
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: '#fff' }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+          <View style={styles.spacer} />
 
-        <ControlledInput control={control} name="username" label="Username" autoCapitalize="none" />
-        <ControlledInput control={control} name="password" label="Password" secureTextEntry />
+          <View>
+            <Text style={styles.title}>Welcome Back</Text>
 
-        <PrimaryButton title={isSubmitting ? "Logging in..." : "Login"} onPress={handleSubmit(onSubmit)} />
+            {globalError ? <Text style={styles.errorText}>{globalError}</Text> : null}
 
-        <Link href={"/(auth)/register" as any} style={styles.link}>Don't have an account? Register</Link>
-      </ScrollView>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={[styles.input, errors.email && styles.inputError]}
+                    placeholder="Email"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                  {errors.email ? <Text style={styles.errorText}>{errors.email.message}</Text> : null}
+                </View>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={[styles.input, errors.password && styles.inputError]}
+                    placeholder="Password"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                    secureTextEntry
+                  />
+                  {errors.password ? <Text style={styles.errorText}>{errors.password.message}</Text> : null}
+                </View>
+              )}
+            />
+
+            <Pressable
+              style={[styles.button, isSubmitting && styles.buttonDisabled]}
+              onPress={handleSubmit(onSubmit)}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Log In</Text>
+              )}
+            </Pressable>
+
+            <Pressable style={styles.linkButton} onPress={() => router.push('/(auth)/register')}>
+              <Text style={styles.linkText}>Don't have an account? Register</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.spacer} />
+        </ScrollView>
+      </SafeAreaView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  content: { padding: 24, justifyContent: 'center', flexGrow: 1, gap: 16 },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 24, textAlign: 'center' },
-  link: { textAlign: 'center', marginTop: 16, color: '#007AFF', fontWeight: '600' }
+  container: {
+    flexGrow: 1,
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  spacer: {
+    flex: 1,
+    minHeight: 20,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 15,
+    borderRadius: 8,
+    fontSize: 16,
+  },
+  inputError: {
+    borderColor: 'red',
+  },
+  errorText: {
+    color: 'red',
+    marginTop: 5,
+    fontSize: 14,
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  buttonDisabled: {
+    backgroundColor: '#a0c8f0',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  linkButton: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  linkText: {
+    color: '#007AFF',
+    fontSize: 16,
+  }
 });

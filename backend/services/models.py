@@ -1,26 +1,18 @@
 from django.db import models
-from django.conf import settings
+from users.models import WorkerProfile
 
-class Category(models.Model):
-    name = models.CharField(max_length=100)
+class JobRole(models.Model):
+    worker = models.ForeignKey(WorkerProfile, on_delete=models.CASCADE, related_name='job_roles')
+    category = models.CharField(max_length=100)
+    hourly_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    experience_years = models.PositiveIntegerField(default=0)
     description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
-        return self.name
-
-class WorkerProfile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='worker_profile')
-    categories = models.ManyToManyField(Category, related_name='workers')
-    bio = models.TextField()
-    hourly_rate = models.DecimalField(max_digits=6, decimal_places=2)
-    location_lat = models.FloatField(null=True, blank=True)
-    location_lng = models.FloatField(null=True, blank=True)
-    rating = models.FloatField(default=0.0)
-
-    def __str__(self):
-        return f"Worker Profile: {self.user.username}"
-
-class PortfolioImage(models.Model):
-    worker = models.ForeignKey(WorkerProfile, on_delete=models.CASCADE, related_name='portfolio_images')
-    image = models.ImageField(upload_to='portfolio_images/')
-    caption = models.CharField(max_length=255, blank=True)
+        return f"{self.worker.user.username} - {self.category}"

@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User
+from .models import CustomerProfile
 
-# Register the custom User model with the default UserAdmin interface
-admin.site.register(User, UserAdmin)
+admin.site.register(CustomerProfile)

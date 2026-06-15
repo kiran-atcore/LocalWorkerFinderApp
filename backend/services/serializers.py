@@ -1,37 +1,18 @@
 from rest_framework import serializers
-from .models import Category, WorkerProfile, PortfolioImage
-from users.serializers import UserSerializer
+from .models import JobRole
 
-class CategorySerializer(serializers.ModelSerializer):
+class JobRoleSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Category
-        fields = '__all__'
+        model = JobRole
+        fields = ['id', 'worker', 'category', 'hourly_rate', 'experience_years', 'description', 'is_active', 'created_at', 'updated_at']
+        read_only_fields = ['worker', 'created_at', 'updated_at']
 
-class PortfolioImageSerializer(serializers.ModelSerializer):
+from users.serializers import WorkerProfileSerializer
+
+class PublicJobRoleSerializer(serializers.ModelSerializer):
+    worker = WorkerProfileSerializer(read_only=True)
+    
     class Meta:
-        model = PortfolioImage
-        fields = ['id', 'image', 'caption']
+        model = JobRole
+        fields = ['id', 'worker', 'category', 'hourly_rate', 'experience_years', 'description']
 
-class WorkerProfileSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    categories = CategorySerializer(many=True, read_only=True)
-
-    class Meta:
-        model = WorkerProfile
-        fields = ['id', 'user', 'categories', 'hourly_rate', 'rating', 'location_lat', 'location_lng']
-
-class WorkerProfileDetailSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    categories = CategorySerializer(many=True, read_only=True)
-    portfolio_images = PortfolioImageSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = WorkerProfile
-        fields = ['id', 'user', 'categories', 'bio', 'hourly_rate', 'rating', 'location_lat', 'location_lng', 'portfolio_images']
-
-class WorkerProfileUpdateSerializer(serializers.ModelSerializer):
-    categories = serializers.PrimaryKeyRelatedField(many=True, queryset=Category.objects.all(), required=False)
-
-    class Meta:
-        model = WorkerProfile
-        fields = ['categories', 'bio', 'hourly_rate', 'location_lat', 'location_lng']

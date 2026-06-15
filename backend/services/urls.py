@@ -1,9 +1,11 @@
-from django.urls import path
-from .views import CategoryListView, WorkerProfileListView, WorkerProfileDetailView, WorkerProfileManageView
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import JobRoleViewSet, PublicJobRoleViewSet
+
+router = DefaultRouter()
+router.register(r'job-roles', JobRoleViewSet, basename='jobrole')
+router.register(r'search/job-roles', PublicJobRoleViewSet, basename='public-jobrole')
 
 urlpatterns = [
-    path('categories/', CategoryListView.as_view(), name='category-list'),
-    path('workers/', WorkerProfileListView.as_view(), name='worker-list'),
-    path('workers/<int:pk>/', WorkerProfileDetailView.as_view(), name='worker-detail'),
-    path('worker/profile/', WorkerProfileManageView.as_view(), name='worker-profile-manage'),
+    path('', include(router.urls)),
 ]

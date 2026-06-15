@@ -1,218 +1,118 @@
-import { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, ScrollView } from 'react-native';
-import { LegendList } from '@legendapp/list';
-import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { apiClient } from '../../services/apiClient';
-import { Loader } from '../../components/Loader';
-import { ErrorText } from '../../components/ErrorText';
-import { WorkerCard } from '../../components/WorkerCard';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuthStore } from '../../store/useAuthStore';
+import CategoryCard from '../../Components/CategoryCard';
+import WorkerCard from '../../Components/WorkerCard';
+import api from '../../services/axios';
+import { CATEGORIES } from '../../constants/categories';
 
-// --- Icon Mapping Helper ---
-const getCategoryIcon = (name: string): keyof typeof MaterialCommunityIcons.glyphMap => {
-  const lowerName = name.toLowerCase();
-  if (lowerName.includes('plumb')) return 'pipe-wrench';
-  if (lowerName.includes('electric')) return 'lightning-bolt';
-  if (lowerName.includes('clean')) return 'broom';
-  if (lowerName.includes('paint')) return 'format-paint';
-  if (lowerName.includes('carp')) return 'saw-blade';
-  if (lowerName.includes('garden') || lowerName.includes('landscap')) return 'leaf';
-  if (lowerName.includes('mechanic') || lowerName.includes('auto')) return 'car-wrench';
-  return 'tools'; // default fallback icon
-};
-
-// --- Static Fallback Categories ---
-const STATIC_CATEGORIES = [
-  { id: '1', name: 'Plumber' },
-  { id: '2', name: 'Electrician' },
-  { id: '3', name: 'Cleaner' },
-  { id: '4', name: 'Painter' },
-  { id: '5', name: 'Carpenter' },
-  { id: '6', name: 'Gardener' },
-  { id: '7', name: 'Mechanic' },
-];
-
-// --- Extracted Components for Performance (Rule 2.1 & 2.2) ---
-
-const CategoryItem = ({ item, onPress }: { item: any, onPress: (id: string) => void }) => {
-  const handlePress = () => onPress(item.id);
-  return (
-    <Pressable onPress={handlePress} style={styles.categoryCard}>
-      <MaterialCommunityIcons name={getCategoryIcon(item.name)} size={32} color="#007AFF" />
-      <Text style={styles.categoryTitle}>{item.name}</Text>
-    </Pressable>
-  );
-};
-
-const FeaturedWorkerItem = ({ item, onPress }: { item: any, onPress: (id: string) => void }) => {
-  const handlePress = () => onPress(item.id);
-  const workerName = item.user ? `${item.user.first_name} ${item.user.last_name}` : 'Worker';
-  const categoryName = item.categories?.length > 0 ? item.categories[0].name : 'General';
-
-  return (
-    <Pressable onPress={handlePress} style={styles.workerWrapper}>
-      <WorkerCard
-        name={workerName}
-        category={categoryName}
-        hourlyRate={item.hourly_rate}
-        rating={item.rating}
-      />
-    </Pressable>
-  );
-};
-
-// --- Main Screen ---
-
-export default function HomeScreen() {
-  const { push } = useRouter();
+function CustomerHomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [workers, setWorkers] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const { data: categories, isLoading: isCatsLoading, error: catError } = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      const res = await apiClient.get('/services/categories/');
-      return res.data;
-    }
-  });
+  useEffect(() => {
+    const fetchWorkers = async () => {
+      try {
+        const res = await api.get(`users/featured-workers/?search=${searchQuery}`);
+        setWorkers(res.data);
+      } catch (error) {
+        console.error('Failed to fetch featured workers:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const { data: workers, isLoading: isWorkersLoading, error: workerError } = useQuery({
-    queryKey: ['workers', 'featured'],
-    queryFn: async () => {
-      const res = await apiClient.get('/services/workers/');
-      return res.data;
-    }
-  });
+    const delayDebounceFn = setTimeout(() => {
+      fetchWorkers();
+    }, 300);
 
-  const handleCategoryPress = useCallback((id: string) => {
-    push(`/workers/${id}` as any);
-  }, [push]);
-
-  const handleWorkerPress = useCallback((id: string) => {
-    push(`/worker/${id}` as any);
-  }, [push]);
-
-  const renderCategory = useCallback(({ item }: { item: any }) => (
-    <CategoryItem item={item} onPress={handleCategoryPress} />
-  ), [handleCategoryPress]);
-
-  const renderWorker = useCallback(({ item }: { item: any }) => (
-    <FeaturedWorkerItem item={item} onPress={handleWorkerPress} />
-  ), [handleWorkerPress]);
-
-  if (isCatsLoading || isWorkersLoading) return <Loader />;
-  if (catError || workerError) return <ErrorText message="Failed to load dashboard data." />;
-
-  // Safely slice the workers list for the featured section
-  const featuredWorkers = Array.isArray(workers) ? workers.slice(0, 5) : [];
-  
-  const displayCategories = categories?.length > 0 ? categories : STATIC_CATEGORIES;
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" style={styles.container}>
-      {/* Header / Location Banner */}
-      <View style={styles.header}>
-        <Text style={styles.locationLabel}>Current Location</Text>
-        <Pressable style={styles.locationButton}>
-          <Text style={styles.locationText}>📍 Thiruvananthapuram, Kerala</Text>
-        </Pressable>
+    <ScrollView style={styles.container}>
+      <View style={styles.banner}>
+        <Text style={styles.bannerText}>📍 Thiruvananthapuram, KL</Text>
       </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchSection}>
+      <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search for 'Electrician', 'Plumber'..."
-          placeholderTextColor="#999"
+          placeholder="Search services or workers..."
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
       </View>
-
-      {/* Service Categories Carousel */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Service Categories</Text>
-        <View style={styles.categoryListWrapper}>
-          <LegendList
-            style={styles.flexList}
-            horizontal
-            data={displayCategories}
-            keyExtractor={(item: any) => item.id.toString()}
-            estimatedItemSize={136} // 120 width + 16 margin
-            renderItem={renderCategory}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-          />
-        </View>
-      </View>
-
-      {/* Featured Workers */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Nearby & Featured</Text>
-        <View style={styles.workerListWrapper}>
-          {featuredWorkers.length > 0 ? (
-            <LegendList
-              style={styles.flexList}
-              horizontal
-              data={featuredWorkers}
-              keyExtractor={(item: any) => item.id.toString()}
-              estimatedItemSize={296} // 280 width + 16 margin
-              renderItem={renderWorker}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.listContent}
+      <View style={styles.categories}>
+        <Text style={styles.sectionTitle}>Categories</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+          {CATEGORIES.map(cat => (
+            <CategoryCard 
+              key={cat.id}
+              id={cat.id}
+              name={cat.name}
+              iconName={cat.iconName}
+              iconFamily={cat.iconFamily as any}
+              color={cat.color}
             />
-          ) : (
-            <Text style={styles.emptyText}>No featured workers found nearby.</Text>
-          )}
-        </View>
+          ))}
+        </ScrollView>
+      </View>
+      <View style={styles.featured}>
+        <Text style={styles.sectionTitle}>Featured Workers</Text>
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#007aff" style={{ marginTop: 20 }} />
+        ) : workers.length > 0 ? (
+          workers.map(worker => (
+            <WorkerCard key={worker.id} worker={worker} />
+          ))
+        ) : (
+          <View style={styles.fallbackContainer}>
+            <Text style={styles.fallbackText}>No related workers found.</Text>
+          </View>
+        )}
       </View>
     </ScrollView>
   );
 }
 
+function WorkerHomeScreen() {
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.banner}>
+        <Text style={styles.bannerText}>📍 Working in: Thiruvananthapuram, KL</Text>
+      </View>
+
+      <View style={styles.featured}>
+        <Text style={styles.sectionTitle}>Latest Job Requests</Text>
+        <View style={styles.workerCard}><Text>Fix leaking pipe - 2km away</Text></View>
+        <View style={styles.workerCard}><Text>Install ceiling fan - 5km away</Text></View>
+      </View>
+    </ScrollView>
+  );
+}
+
+export default function HomeScreen() {
+  const activeRole = useAuthStore((state) => state.activeRole);
+  return (
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+      {activeRole === 'worker' ? <WorkerHomeScreen /> : <CustomerHomeScreen />}
+    </SafeAreaView>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9f9f9' },
-  header: { padding: 24, paddingBottom: 16, gap: 4 },
-  locationLabel: { fontSize: 12, color: '#666', fontWeight: '600', textTransform: 'uppercase' },
-  locationButton: { flexDirection: 'row', alignItems: 'center' },
-  locationText: { fontSize: 18, fontWeight: '700', color: '#111' },
-  searchSection: { paddingHorizontal: 24, paddingBottom: 24 },
-  searchInput: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    borderCurve: 'continuous',
-    borderWidth: 1,
-    borderColor: '#eee',
-    fontSize: 16,
-  },
-  section: { gap: 12, paddingBottom: 32 },
-  sectionTitle: { fontSize: 20, fontWeight: '700', paddingHorizontal: 24, color: '#111' },
-  flexList: { flex: 1 },
-  categoryListWrapper: { height: 120 }, // Explicit height required inside ScrollView
-  workerListWrapper: { height: 130 }, // Explicit height required inside ScrollView
-  listContent: { paddingHorizontal: 24 },
-  categoryCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 16,
-    borderCurve: 'continuous',
-    marginRight: 16,
-    width: 120,
-    height: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    gap: 8,
-  },
-  categoryTitle: { fontWeight: '600', fontSize: 13, textAlign: 'center', color: '#333' },
-  workerWrapper: {
-    marginRight: 16,
-    width: 280,
-  },
-  emptyText: { paddingHorizontal: 24, color: '#666', fontStyle: 'italic' }
+  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  banner: { padding: 20, backgroundColor: '#007AFF', alignItems: 'center' },
+  bannerText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  searchContainer: { margin: 15 },
+  searchInput: { padding: 15, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#ddd', fontSize: 16 },
+  categories: { padding: 15 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  categoryScroll: { paddingVertical: 10, paddingHorizontal: 5 },
+  featured: { padding: 15 },
+  workerCard: { padding: 15, backgroundColor: '#fff', borderRadius: 8, marginBottom: 10, borderWidth: 1, borderColor: '#ddd' },
+  fallbackContainer: { padding: 20, alignItems: 'center', justifyContent: 'center' },
+  fallbackText: { fontSize: 16, color: '#888', fontStyle: 'italic' },
 });
