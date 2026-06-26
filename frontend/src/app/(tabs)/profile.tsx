@@ -49,11 +49,15 @@ export default function ProfileScreen() {
     const targetRole = activeRole === 'customer' ? 'worker' : 'customer';
     setIsSwitching(true);
     try {
-      await api.post('users/switch-role/', { role: targetRole });
+      const res = await api.post('users/switch-role/', { role: targetRole });
       setActiveRole(targetRole);
       // Optional: update the user object if has_worker_profile was false
       if (user && !user.has_worker_profile && targetRole === 'worker') {
          setAuth({ ...user, has_worker_profile: true });
+      }
+
+      if (targetRole === 'worker' && res.data.is_first_time) {
+         router.push(`/WorkerProfileEdit/${user?.id || 0}` as any);
       }
     } catch (error) {
       console.error('Role switch failed:', error);
@@ -65,7 +69,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}>
         <View style={styles.header}>
           {user?.profile_photo ? (
             <Image source={{ uri: getImageUrl(user.profile_photo) as string }} style={styles.avatar} />
@@ -110,7 +114,7 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        <View style={styles.section}>
+        <View style={[styles.section, { marginTop: 'auto' }]}>
           <Pressable style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutText}>Logout</Text>
           </Pressable>

@@ -18,9 +18,10 @@ interface WorkerCardProps {
     rating: number;
     categories: string[];
   };
+  distance?: number;
 }
 
-export default function WorkerCard({ worker }: WorkerCardProps) {
+export default function WorkerCard({ worker, distance }: WorkerCardProps) {
   const router = useRouter();
 
   const handlePress = () => {
@@ -45,6 +46,13 @@ export default function WorkerCard({ worker }: WorkerCardProps) {
           <View style={styles.ratingRow}>
             <Ionicons name="star" size={16} color="#f1c40f" />
             <Text style={styles.ratingText}>{worker.rating.toFixed(1)}</Text>
+            {distance !== undefined && (
+              <>
+                <Text style={styles.dotSeparator}>•</Text>
+                <Ionicons name="location" size={14} color="#7f8c8d" />
+                <Text style={styles.distanceText}>{distance.toFixed(1)} km away</Text>
+              </>
+            )}
           </View>
         </View>
       </View>
@@ -123,6 +131,16 @@ const styles = StyleSheet.create({
     color: '#7f8c8d',
     marginLeft: 4,
     fontWeight: '600',
+  },
+  dotSeparator: {
+    fontSize: 14,
+    color: '#bdc3c7',
+    marginHorizontal: 8,
+  },
+  distanceText: {
+    fontSize: 13,
+    color: '#7f8c8d',
+    marginLeft: 2,
   },
   categoriesContainer: {
     flexDirection: 'row',

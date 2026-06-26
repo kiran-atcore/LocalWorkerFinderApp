@@ -6,6 +6,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-change-this-to-a-secure-secret'
 DEBUG = True
 
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', 'your_google_client_id_here')
+
 # Allow React Native dev environments (like 10.0.2.2 or physical network IPs)
 ALLOWED_HOSTS = ['*'] 
 
@@ -25,6 +27,7 @@ INSTALLED_APPS = [
     'users',
     'services',
     'bookings',
+    'core',
 ]
 
 MIDDLEWARE = [

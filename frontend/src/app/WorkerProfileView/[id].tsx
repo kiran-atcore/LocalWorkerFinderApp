@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ActivityIndicator, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Image, ActivityIndicator, ScrollView, Pressable, Platform } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import api, { getImageUrl } from '../../services/axios';
@@ -50,12 +51,66 @@ export default function WorkerProfileView() {
           <View style={styles.ratingBadge}>
             <Text style={styles.ratingText}>⭐ {profile.rating.toFixed(1)}</Text>
           </View>
+          <Pressable 
+            style={[styles.actionButton, { marginTop: 15 }]} 
+            onPress={() => (router.push as any)(`/ChatInbox/new?other_user_id=${profile.user.id}&name=${encodeURIComponent(profile.user.first_name + ' ' + profile.user.last_name)}`)}
+          >
+            <Text style={styles.actionButtonText}>💬 Chat</Text>
+          </Pressable>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About</Text>
           <Text style={styles.bioText}>{profile.bio || 'No bio provided.'}</Text>
         </View>
+
+        {profile.address_text && profile.latitude && profile.longitude && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Location</Text>
+            <Text style={styles.addressText}>{profile.address_text}</Text>
+            <View style={styles.mapContainer}>
+              <WebView
+                style={styles.map}
+                scrollEnabled={false}
+                source={{
+                  html: `
+                    <!DOCTYPE html>
+                    <html>
+                      <head>
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+                        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                        <style>
+                          body { padding: 0; margin: 0; }
+                          #map { width: 100%; height: 100vh; }
+                        </style>
+                      </head>
+                      <body>
+                        <div id="map"></div>
+                        <script>
+                          var map = L.map('map', {
+                            zoomControl: false,
+                            dragging: false,
+                            scrollWheelZoom: false,
+                            doubleClickZoom: false,
+                            touchZoom: false
+                          }).setView([${profile.latitude}, ${profile.longitude}], 14);
+                          
+                          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            maxZoom: 19,
+                            attribution: '© OpenStreetMap'
+                          }).addTo(map);
+
+                          L.marker([${profile.latitude}, ${profile.longitude}]).addTo(map);
+                        </script>
+                      </body>
+                    </html>
+                  `
+                }}
+              />
+            </View>
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Skills</Text>
@@ -150,5 +205,32 @@ const styles = StyleSheet.create({
   roleDesc: {
     fontSize: 14,
     color: '#555',
+  },
+  addressText: {
+    fontSize: 16,
+    color: '#444',
+    marginBottom: 15,
+  },
+  mapContainer: {
+    height: 150,
+    width: '100%',
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  map: {
+    flex: 1,
+  },
+  actionButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   }
 });

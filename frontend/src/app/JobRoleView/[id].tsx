@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/axios';
 import { CATEGORIES } from '../../constants/categories';
+import { useAuthStore } from '../../store/useAuthStore';
 
 export default function JobRoleViewScreen() {
   const { id } = useLocalSearchParams();
@@ -12,6 +13,7 @@ export default function JobRoleViewScreen() {
   const [role, setRole] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const insets = useSafeAreaInsets();
+  const currentUser = useAuthStore((state) => state.user);
 
   useEffect(() => {
     fetchJobRole();
@@ -41,6 +43,7 @@ export default function JobRoleViewScreen() {
 
   const categoryInfo = CATEGORIES.find(c => c.id === role.category);
   const categoryName = categoryInfo ? categoryInfo.name : role.category;
+  const isOwner = currentUser?.id === role.worker?.user?.id;
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
@@ -52,7 +55,7 @@ export default function JobRoleViewScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 20) }}>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 100) }}>
         <View style={styles.card}>
           <Text style={styles.categoryTitle}>{categoryName}</Text>
           
@@ -72,6 +75,14 @@ export default function JobRoleViewScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {!isOwner && (
+        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 15) }]}>
+          <Pressable style={styles.bookButton} onPress={() => router.push(`/BookingForm/${role.id}` as any)}>
+            <Text style={styles.bookButtonText}>Book Service</Text>
+          </Pressable>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -133,5 +144,30 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 22,
   },
-
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    padding: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 10,
+  },
+  bookButton: {
+    backgroundColor: '#34c759',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  bookButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  }
 });

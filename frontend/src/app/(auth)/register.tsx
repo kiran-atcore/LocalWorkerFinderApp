@@ -7,6 +7,7 @@ import * as Yup from 'yup';
 import api from '../../services/axios';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useRouter } from 'expo-router';
+import GoogleLogin from '../../Components/GoogleLogin';
 
 const registerSchema = Yup.object().shape({
   fullName: Yup.string()
@@ -50,11 +51,11 @@ export default function RegisterScreen() {
 
       const response = await api.post('users/register/', payload);
 
-      // Update global auth state
-      setAuth(response.data.user);
-
-      // Redirect to home
-      router.replace('/(tabs)/home' as any);
+      // Route to OTP screen
+      router.replace({
+        pathname: '/(auth)/otp',
+        params: { email: data.email }
+      });
     } catch (error: any) {
       if (error.response?.data) {
         setGlobalError(JSON.stringify(error.response.data));
@@ -163,6 +164,14 @@ export default function RegisterScreen() {
               )}
             </Pressable>
 
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <GoogleLogin type="register" />
+
             <Pressable style={styles.linkButton} onPress={() => router.push('/(auth)/login')}>
               <Text style={styles.linkText}>Already have an account? Log In</Text>
             </Pressable>
@@ -235,6 +244,21 @@ const styles = StyleSheet.create({
   },
   linkText: {
     color: '#007AFF',
+    fontSize: 16,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ddd',
+  },
+  dividerText: {
+    marginHorizontal: 10,
+    color: '#888',
     fontSize: 16,
   }
 });

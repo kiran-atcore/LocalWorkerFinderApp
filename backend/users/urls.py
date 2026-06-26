@@ -1,10 +1,12 @@
 from django.urls import path
-from .views import RegisterView, LoginView, LogoutView, SessionCheckView, CSRFTokenView, SwitchRoleView, DeleteAccountView, CustomerProfileView, WorkerProfileDetailView, FeaturedWorkersView
+from .views import RegisterView, LoginView, LogoutView, SessionCheckView, CSRFTokenView, SwitchRoleView, DeleteAccountView, CustomerProfileView, WorkerProfileDetailView, FeaturedWorkersView, GoogleLoginView, VerifyOTPView, ResendOTPView
 
 app_name = 'users'
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
+    path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
+    path('resend-otp/', ResendOTPView.as_view(), name='resend_otp'),
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('session/', SessionCheckView.as_view(), name='session_check'),
@@ -15,4 +17,5 @@ urlpatterns = [
     path('worker-profile/', WorkerProfileDetailView.as_view(), name='worker_profile_self'),
     path('worker-profile/<int:id>/', WorkerProfileDetailView.as_view(), name='worker_profile_detail'),
     path('featured-workers/', FeaturedWorkersView.as_view(), name='featured_workers'),
+    path('google-login/', GoogleLoginView.as_view(), name='google_login'),
 ]

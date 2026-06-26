@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 interface CategoryCardProps {
   id: string;
   name: string;
   iconName: any;
-  iconFamily?: 'Ionicons' | 'MaterialIcons' | 'FontAwesome5';
+  iconFamily?: 'Ionicons' | 'MaterialIcons' | 'FontAwesome5' | 'MaterialCommunityIcons';
   color?: string;
   onPress?: () => void;
   isActive?: boolean;
@@ -22,6 +22,8 @@ export default function CategoryCard({ id, name, iconName, iconFamily = 'Ionicon
         return <MaterialIcons name={iconName} size={28} color={color} />;
       case 'FontAwesome5':
         return <FontAwesome5 name={iconName} size={28} color={color} />;
+      case 'MaterialCommunityIcons':
+        return <MaterialCommunityIcons name={iconName} size={28} color={color} />;
       case 'Ionicons':
       default:
         return <Ionicons name={iconName} size={28} color={color} />;

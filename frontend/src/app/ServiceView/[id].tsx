@@ -4,11 +4,13 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api, { getImageUrl } from '../../services/axios';
+import { useAuthStore } from '../../store/useAuthStore';
 
 export default function ServiceViewScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const currentUser = useAuthStore((state) => state.user);
   
   const [jobRole, setJobRole] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,6 +51,7 @@ export default function ServiceViewScreen() {
 
   const worker = jobRole.worker;
   const workerName = worker.user.first_name ? `${worker.user.first_name} ${worker.user.last_name}` : worker.user.username;
+  const isOwner = currentUser?.id === worker.user.id;
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
@@ -60,7 +63,7 @@ export default function ServiceViewScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={[styles.container, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+      <ScrollView contentContainerStyle={[styles.container, { paddingBottom: Math.max(insets.bottom, 100) }]}>
         <View style={styles.card}>
           <View style={styles.categoryBadge}>
             <Text style={styles.categoryBadgeText}>{jobRole.category.toUpperCase()}</Text>
@@ -103,6 +106,14 @@ export default function ServiceViewScreen() {
           </Pressable>
         </View>
       </ScrollView>
+
+      {!isOwner && (
+        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 15) }]}>
+          <Pressable style={styles.bookButton} onPress={() => router.push(`/BookingForm/${jobRole.id}` as any)}>
+            <Text style={styles.bookButtonText}>Book Service</Text>
+          </Pressable>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -229,6 +240,32 @@ const styles = StyleSheet.create({
   profileButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    padding: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 10,
+  },
+  bookButton: {
+    backgroundColor: '#34c759',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  bookButtonText: {
+    color: '#fff',
+    fontSize: 18,
     fontWeight: 'bold',
   }
 });

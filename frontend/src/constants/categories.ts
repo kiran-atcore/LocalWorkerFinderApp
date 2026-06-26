@@ -9,4 +9,12 @@ export const CATEGORIES = [
   { id: 'moving', name: 'Moving', iconName: 'truck-moving', iconFamily: 'FontAwesome5', color: '#34495e' },
   { id: 'pest_control', name: 'Pest Control', iconName: 'bug', iconFamily: 'Ionicons', color: '#e74c3c' },
   { id: 'home_security', name: 'Home Security', iconName: 'shield-checkmark', iconFamily: 'Ionicons', color: '#2c3e50' },
+  { id: 'mechanic', name: 'Mechanic', iconName: 'car-wrench', iconFamily: 'MaterialCommunityIcons', color: '#7f8c8d' },
+  { id: 'handyman', name: 'Handyman', iconName: 'toolbox', iconFamily: 'MaterialCommunityIcons', color: '#d35400' },
+  { id: 'tiler', name: 'Tiler', iconName: 'grid', iconFamily: 'Ionicons', color: '#16a085' },
+  { id: 'roofer', name: 'Roofer', iconName: 'home', iconFamily: 'Ionicons', color: '#c0392b' },
+  { id: 'mason', name: 'Mason', iconName: 'wall', iconFamily: 'MaterialCommunityIcons', color: '#8e44ad' },
+  { id: 'arborist', name: 'Arborist', iconName: 'tree', iconFamily: 'MaterialCommunityIcons', color: '#27ae60' },
+  { id: 'delivery', name: 'Delivery', iconName: 'local-shipping', iconFamily: 'MaterialIcons', color: '#f39c12' },
+  { id: 'transportation', name: 'Transportation', iconName: 'bus', iconFamily: 'Ionicons', color: '#2980b9' },
 ];

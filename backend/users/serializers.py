@@ -28,14 +28,14 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomerProfile
-        fields = ['id', 'user', 'profile_photo', 'created_at']
+        fields = ['id', 'user', 'profile_photo', 'latitude', 'longitude', 'address_text', 'created_at']
 
 class WorkerProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
 
     class Meta:
         model = WorkerProfile
-        fields = ['id', 'user', 'profile_photo', 'business_name', 'bio', 'skills', 'rating', 'total_earnings', 'created_at']
+        fields = ['id', 'user', 'profile_photo', 'business_name', 'bio', 'skills', 'rating', 'total_earnings', 'latitude', 'longitude', 'address_text', 'created_at']
         read_only_fields = ['rating', 'total_earnings']
 
 class FeaturedWorkerSerializer(serializers.ModelSerializer):
@@ -44,7 +44,7 @@ class FeaturedWorkerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WorkerProfile
-        fields = ['id', 'user', 'profile_photo', 'business_name', 'rating', 'categories']
+        fields = ['id', 'user', 'profile_photo', 'business_name', 'rating', 'categories', 'latitude', 'longitude']
 
     def get_categories(self, obj):
         # Return unique categories of active job roles

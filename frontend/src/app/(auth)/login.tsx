@@ -7,6 +7,7 @@ import * as Yup from 'yup';
 import api from '../../services/axios';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useRouter } from 'expo-router';
+import GoogleLogin from '../../Components/GoogleLogin';
 
 const loginSchema = Yup.object().shape({
   email: Yup.string()
@@ -116,6 +117,14 @@ export default function LoginScreen() {
               )}
             </Pressable>
 
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <GoogleLogin type="login" />
+
             <Pressable style={styles.linkButton} onPress={() => router.push('/(auth)/register')}>
               <Text style={styles.linkText}>Don't have an account? Register</Text>
             </Pressable>
@@ -183,6 +192,21 @@ const styles = StyleSheet.create({
   },
   linkText: {
     color: '#007AFF',
+    fontSize: 16,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ddd',
+  },
+  dividerText: {
+    marginHorizontal: 10,
+    color: '#888',
     fontSize: 16,
   }
 });

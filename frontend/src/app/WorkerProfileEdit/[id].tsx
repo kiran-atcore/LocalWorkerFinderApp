@@ -6,11 +6,12 @@ import * as ImagePicker from 'expo-image-picker';
 import api, { getImageUrl } from '../../services/axios';
 import { useAuthStore } from '../../store/useAuthStore';
 import { CATEGORIES } from '../../constants/categories';
+import LocationBanner from '../../Components/LocationBanner';
 
 export default function WorkerProfileEdit() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { user, setAuth } = useAuthStore();
+  const { user, setAuth, pendingWorkerLocation, setPendingWorkerLocation } = useAuthStore();
   
   const [fullName, setFullName] = useState('');
   const [businessName, setBusinessName] = useState('');
@@ -25,6 +26,7 @@ export default function WorkerProfileEdit() {
 
   useEffect(() => {
     fetchProfile();
+    return () => setPendingWorkerLocation(null);
   }, []);
 
   const fetchProfile = async () => {
@@ -84,6 +86,12 @@ export default function WorkerProfileEdit() {
         } as any);
       }
 
+      if (pendingWorkerLocation) {
+        formData.append('latitude', pendingWorkerLocation.latitude.toString());
+        formData.append('longitude', pendingWorkerLocation.longitude.toString());
+        formData.append('address_text', pendingWorkerLocation.address_text);
+      }
+
       const res = await api.put('users/worker-profile/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -135,6 +143,11 @@ export default function WorkerProfileEdit() {
         
         <Text style={styles.label}>Business Name</Text>
         <TextInput style={styles.input} value={businessName} onChangeText={setBusinessName} placeholder="E.g., John's Plumbing" />
+
+        <Text style={styles.label}>Service Location</Text>
+        <View style={{ marginBottom: 20, borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: '#ddd' }}>
+          <LocationBanner mode="profile" />
+        </View>
 
         <Text style={styles.label}>Bio</Text>
         <TextInput style={[styles.input, styles.textArea]} value={bio} onChangeText={setBio} placeholder="Describe your experience..." multiline numberOfLines={4} />

@@ -1,50 +1,52 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
+import api from '../../services/axios';
+import { CATEGORIES } from '../../constants/categories';
 
-// Dummy Data
-interface JobItem {
-  id: number;
-  title: string;
-  status: string;
-  worker?: string | null;
-  customer?: string;
-  distance?: string;
-}
+const formatDateTime = (dateString: string) => {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + 
+         d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+};
 
-const customerActiveRequests: JobItem[] = [
-  { id: 1, title: 'Fix leaking pipe', status: 'Pending', worker: null },
-  { id: 2, title: 'Install ceiling fan', status: 'Active', worker: 'Jane Smith' },
-];
-const customerPastRequests: JobItem[] = [
-  { id: 3, title: 'House Cleaning', status: 'Completed', worker: 'Alice Johnson' },
-  { id: 4, title: 'Garden Mowing', status: 'Cancelled', worker: null },
-];
-
-const workerActiveJobs: JobItem[] = [
-  { id: 1, title: 'Fix leaking pipe', status: 'Incoming', customer: 'John Doe', distance: '2km' },
-  { id: 2, title: 'Install ceiling fan', status: 'Active', customer: 'Mark L.', distance: '5km' },
-];
-const workerPastJobs: JobItem[] = [
-  { id: 3, title: 'House Cleaning', status: 'Completed', customer: 'Sarah W.' },
-  { id: 4, title: 'Window Cleaning', status: 'Rejected', customer: 'Tom B.' },
-];
-
-function CustomerActivityScreen() {
+function CustomerActivityScreen({ bookings, isLoading }: { bookings: any[], isLoading: boolean }) {
   const [tab, setTab] = useState<'Active' | 'Past'>('Active');
+  const router = useRouter();
   
+  const getCategoryName = (categoryId: string) => {
+    const cat = CATEGORIES.find(c => c.id === categoryId);
+    return cat ? cat.name : categoryId;
+  };
+
   const renderList = () => {
-    const list = tab === 'Active' ? customerActiveRequests : customerPastRequests;
+    if (isLoading) return <ActivityIndicator size="large" color="#007aff" style={{ marginTop: 20 }} />;
+    
+    // Customer Active: PENDING, ACCEPTED
+    // Customer Past: REJECTED, CANCELLED, COMPLETED
+    const list = bookings.filter(b => 
+      tab === 'Active' 
+        ? ['PENDING', 'ACCEPTED', 'ACTIVE'].includes(b.status)
+        : ['REJECTED', 'CANCELLED', 'COMPLETED'].includes(b.status)
+    );
+
     if (list.length === 0) return <Text style={styles.emptyText}>No requests found.</Text>;
+    
     return list.map(item => (
-      <View key={item.id} style={styles.card}>
-        <View>
-          <Text style={styles.jobTitle}>{item.title}</Text>
-          {item.worker && <Text style={styles.subText}>Worker: {item.worker}</Text>}
+      <Pressable key={item.id} style={styles.card} onPress={() => router.push(`/BookingDetailsView/${item.id}` as any)}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.jobTitle}>{getCategoryName(item.job_role_details.category)}</Text>
+          <Text style={styles.subText}>Worker: {item.worker_details.name}</Text>
+          <Text style={styles.dateText}>
+            {tab === 'Active' ? `Booked: ${formatDateTime(item.created_at)}` : `Closed: ${formatDateTime(item.updated_at)}`}
+          </Text>
         </View>
-        <Text style={[styles.badge, getBadgeStyle(item.status)]}>[{item.status}]</Text>
-      </View>
+        <Text style={[styles.badge, getBadgeStyle(item.status, 'customer')]}>[{item.status}]</Text>
+      </Pressable>
     ));
   };
 
@@ -66,20 +68,44 @@ function CustomerActivityScreen() {
   );
 }
 
-function WorkerActivityScreen() {
+function WorkerActivityScreen({ bookings, isLoading }: { bookings: any[], isLoading: boolean }) {
   const [tab, setTab] = useState<'Active' | 'Past'>('Active');
+  const router = useRouter();
   
+  const getCategoryName = (categoryId: string) => {
+    const cat = CATEGORIES.find(c => c.id === categoryId);
+    return cat ? cat.name : categoryId;
+  };
+
   const renderList = () => {
-    const list = tab === 'Active' ? workerActiveJobs : workerPastJobs;
+    if (isLoading) return <ActivityIndicator size="large" color="#007aff" style={{ marginTop: 20 }} />;
+    
+    // Worker Active: PENDING, ACCEPTED
+    // Worker Past: REJECTED, COMPLETED
+    // Exclude CANCELLED completely from worker view
+    const list = bookings.filter(b => b.status !== 'CANCELLED').filter(b => 
+      tab === 'Active' 
+        ? ['PENDING', 'ACCEPTED', 'ACTIVE'].includes(b.status)
+        : ['REJECTED', 'COMPLETED'].includes(b.status)
+    );
+
     if (list.length === 0) return <Text style={styles.emptyText}>No jobs found.</Text>;
+    
     return list.map(item => (
-      <View key={item.id} style={styles.card}>
-        <View>
-          <Text style={styles.jobTitle}>{item.title}</Text>
-          <Text style={styles.subText}>Customer: {item.customer} {item.distance ? `(${item.distance})` : ''}</Text>
+      <Pressable key={item.id} style={styles.card} onPress={() => router.push(`/BookingDetailsView/${item.id}` as any)}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.jobTitle}>{getCategoryName(item.job_role_details.category)}</Text>
+          <Text style={styles.subText}>Customer: {item.customer_details.name}</Text>
+          <Text style={styles.dateText}>
+            {tab === 'Active' ? `Booked: ${formatDateTime(item.created_at)}` : `Closed: ${formatDateTime(item.updated_at)}`}
+          </Text>
         </View>
-        <Text style={[styles.badge, getBadgeStyle(item.status)]}>[{item.status}]</Text>
-      </View>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={[styles.badge, getBadgeStyle(item.status, 'worker')]}>
+            [{item.status === 'PENDING' ? 'INCOMING' : item.status}]
+          </Text>
+        </View>
+      </Pressable>
     ));
   };
 
@@ -101,17 +127,18 @@ function WorkerActivityScreen() {
   );
 }
 
-function getBadgeStyle(status: string) {
+function getBadgeStyle(status: string, role: string) {
   switch(status) {
-    case 'Pending':
-    case 'Incoming':
-      return { color: '#ff9500' };
-    case 'Active':
+    case 'PENDING':
+      return { color: '#ff9500' }; // Will be displayed as INCOMING for worker
+    case 'ACCEPTED':
       return { color: '#007aff' };
-    case 'Completed':
+    case 'ACTIVE':
+      return { color: '#5856d6' };
+    case 'COMPLETED':
       return { color: '#34c759' };
-    case 'Cancelled':
-    case 'Rejected':
+    case 'CANCELLED':
+    case 'REJECTED':
       return { color: '#ff3b30' };
     default:
       return { color: '#888' };
@@ -120,9 +147,49 @@ function getBadgeStyle(status: string) {
 
 export default function ActivityScreen() {
   const activeRole = useAuthStore((state) => state.activeRole);
+  const currentUser = useAuthStore((state) => state.user);
+  
+  const [allBookings, setAllBookings] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchBookings();
+    }, [])
+  );
+
+  const fetchBookings = async () => {
+    const isAuth = useAuthStore.getState().isAuthenticated;
+    if (!isAuth) return;
+
+    try {
+      setIsLoading(true);
+      const res = await api.get('bookings/');
+      setAllBookings(res.data);
+    } catch (error) {
+      console.error('Failed to fetch bookings', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Filter bookings based on current context
+  const contextBookings = allBookings.filter(b => {
+    if (!currentUser) return false;
+    if (activeRole === 'customer') {
+      return b.customer_details.user_id === currentUser.id;
+    } else {
+      return b.worker_details.user_id === currentUser.id;
+    }
+  });
+
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-      {activeRole === 'worker' ? <WorkerActivityScreen /> : <CustomerActivityScreen />}
+      {activeRole === 'worker' ? (
+        <WorkerActivityScreen bookings={contextBookings} isLoading={isLoading} />
+      ) : (
+        <CustomerActivityScreen bookings={contextBookings} isLoading={isLoading} />
+      )}
     </SafeAreaView>
   );
 }
@@ -139,6 +206,7 @@ const styles = StyleSheet.create({
   card: { padding: 15, backgroundColor: '#fff', borderRadius: 8, marginBottom: 10, borderWidth: 1, borderColor: '#ddd', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   jobTitle: { fontSize: 16, fontWeight: '500' },
   subText: { fontSize: 14, color: '#666', marginTop: 4 },
-  badge: { fontWeight: 'bold' },
+  dateText: { fontSize: 12, color: '#999', marginTop: 6, fontStyle: 'italic' },
+  badge: { fontWeight: 'bold', fontSize: 12 },
   emptyText: { textAlign: 'center', marginTop: 30, color: '#888', fontSize: 16 },
 });

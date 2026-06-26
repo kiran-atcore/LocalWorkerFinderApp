@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Image, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, Image, ActivityIndicator, TextInput, Switch } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import api, { getImageUrl } from '../../services/axios';
+import { useAuthStore } from '../../store/useAuthStore';
 
 export default function CategoryListScreen() {
   const { id } = useLocalSearchParams();
@@ -18,6 +19,10 @@ export default function CategoryListScreen() {
   const [searchText, setSearchText] = useState('');
   const [maxRate, setMaxRate] = useState(200);
   const [minExp, setMinExp] = useState(0);
+  const [radius, setRadius] = useState(50); // Default 50km
+  const [isRadiusEnabled, setIsRadiusEnabled] = useState(true);
+  
+  const { searchLocation } = useAuthStore();
 
   const categoryName = typeof id === 'string' ? id.charAt(0).toUpperCase() + id.slice(1).replace('_', ' ') : 'Category';
 
@@ -37,13 +42,38 @@ export default function CategoryListScreen() {
     }
   };
 
-  const filteredRoles = jobRoles.filter(role => {
+  const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  const rolesWithDistance = jobRoles.map(role => {
+    let distance = undefined;
+    const worker = role.worker;
+    if (searchLocation && worker.latitude && worker.longitude) {
+      distance = getDistance(searchLocation.latitude, searchLocation.longitude, parseFloat(worker.latitude), parseFloat(worker.longitude));
+    }
+    return { ...role, distance };
+  });
+
+  const filteredRoles = rolesWithDistance.filter(role => {
     const worker = role.worker;
     const name = worker.user.first_name ? `${worker.user.first_name} ${worker.user.last_name}` : worker.user.username;
     
     if (searchText && !name.toLowerCase().includes(searchText.toLowerCase())) return false;
     if (maxRate < 200 && parseFloat(role.hourly_rate) > maxRate) return false;
     if (minExp > 0 && role.experience_years < minExp) return false;
+    
+    if (isRadiusEnabled && role.distance !== undefined) {
+      if (role.distance > radius) return false;
+    }
+    
     return true;
   });
 
@@ -66,7 +96,13 @@ export default function CategoryListScreen() {
           <View style={styles.ratingRow}>
             <Ionicons name="star" size={16} color="#f1c40f" />
             <Text style={styles.ratingText}>{worker.rating.toFixed(1)}</Text>
-            <Text style={styles.distanceText}> • 2.5 km</Text>
+            {item.distance !== undefined && (
+              <>
+                <Text style={styles.dotSeparator}>•</Text>
+                <Ionicons name="location" size={14} color="#7f8c8d" />
+                <Text style={styles.distanceText}>{item.distance.toFixed(1)} km away</Text>
+              </>
+            )}
           </View>
         </View>
         <View style={styles.priceContainer}>
@@ -123,6 +159,33 @@ export default function CategoryListScreen() {
               maximumTrackTintColor="#ddd"
             />
           </View>
+        </View>
+
+        <View style={styles.sliderContainer}>
+          <View style={styles.sliderHeader}>
+            <View style={styles.sliderLabelContainer}>
+              <Text style={styles.sliderLabel}>Search Radius</Text>
+              <Switch
+                value={isRadiusEnabled}
+                onValueChange={setIsRadiusEnabled}
+                trackColor={{ false: '#ddd', true: '#007aff' }}
+                style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+              />
+            </View>
+            <Text style={[styles.sliderValue, !isRadiusEnabled && { color: '#aaa' }]}>{radius} km</Text>
+          </View>
+          <Slider
+            style={{ width: '100%', height: 40 }}
+            minimumValue={5}
+            maximumValue={100}
+            step={5}
+            value={radius}
+            onValueChange={setRadius}
+            disabled={!isRadiusEnabled}
+            minimumTrackTintColor={isRadiusEnabled ? "#007aff" : "#ddd"}
+            maximumTrackTintColor="#ddd"
+            thumbTintColor={isRadiusEnabled ? "#007aff" : "#bbb"}
+          />
         </View>
       </View>
 
@@ -253,9 +316,15 @@ const styles = StyleSheet.create({
     color: '#666',
     marginLeft: 4,
   },
-  distanceText: {
+  dotSeparator: {
     fontSize: 14,
-    color: '#888',
+    color: '#bdc3c7',
+    marginHorizontal: 8,
+  },
+  distanceText: {
+    fontSize: 13,
+    color: '#7f8c8d',
+    marginLeft: 2,
   },
   priceContainer: {
     paddingLeft: 10,
@@ -270,5 +339,10 @@ const styles = StyleSheet.create({
     marginTop: 50,
     color: '#888',
     fontSize: 16,
-  }
+  },
+  sliderContainer: { marginTop: 15 },
+  sliderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 },
+  sliderLabelContainer: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  sliderLabel: { fontSize: 14, fontWeight: '600', color: '#555' },
+  sliderValue: { fontSize: 14, fontWeight: 'bold', color: '#007aff' },
 });
