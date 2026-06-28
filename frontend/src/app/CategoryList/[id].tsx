@@ -17,7 +17,10 @@ export default function CategoryListScreen() {
 
   // Filter states
   const [searchText, setSearchText] = useState('');
+  const [parsedText, setParsedText] = useState('');
   const [maxRate, setMaxRate] = useState(200);
+  const [minRate, setMinRate] = useState(0);
+  const [minRating, setMinRating] = useState(0);
   const [minExp, setMinExp] = useState(0);
   const [radius, setRadius] = useState(50); // Default 50km
   const [isRadiusEnabled, setIsRadiusEnabled] = useState(true);
@@ -25,6 +28,42 @@ export default function CategoryListScreen() {
   const { searchLocation } = useAuthStore();
 
   const categoryName = typeof id === 'string' ? id.charAt(0).toUpperCase() + id.slice(1).replace('_', ' ') : 'Category';
+
+  // Debounced NLP Parse
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      if (searchText) {
+        try {
+          const res = await api.get(`core/parse-query/?q=${encodeURIComponent(searchText)}`);
+          if (res.data) {
+            setParsedText(res.data.search_text || '');
+            if (res.data.radius) {
+              setRadius(res.data.radius);
+              setIsRadiusEnabled(true);
+            } else {
+              setIsRadiusEnabled(false);
+            }
+            setMaxRate(res.data.max_rate !== null ? res.data.max_rate : 200);
+            setMinRate(res.data.min_rate !== null ? res.data.min_rate : 0);
+            setMinRating(res.data.min_rating !== null ? res.data.min_rating : 0);
+            setMinExp(res.data.min_experience !== null ? res.data.min_experience : 0);
+          }
+        } catch (e) {
+          console.error('NLP Parse error', e);
+          setParsedText(searchText);
+        }
+      } else {
+        setParsedText('');
+        setRadius(50);
+        setIsRadiusEnabled(false);
+        setMaxRate(200);
+        setMinRate(0);
+        setMinRating(0);
+        setMinExp(0);
+      }
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchText]);
 
   useEffect(() => {
     fetchJobRoles();
@@ -66,9 +105,16 @@ export default function CategoryListScreen() {
     const worker = role.worker;
     const name = worker.user.first_name ? `${worker.user.first_name} ${worker.user.last_name}` : worker.user.username;
     
-    if (searchText && !name.toLowerCase().includes(searchText.toLowerCase())) return false;
-    if (maxRate < 200 && parseFloat(role.hourly_rate) > maxRate) return false;
+    if (parsedText && !name.toLowerCase().includes(parsedText.toLowerCase())) return false;
+    
+    const rate = parseFloat(role.hourly_rate) || 0;
+    if (maxRate < 200 && rate > maxRate) return false;
+    if (minRate > 0 && rate < minRate) return false;
+    
     if (minExp > 0 && role.experience_years < minExp) return false;
+    
+    const rating = parseFloat(worker.rating) || 0;
+    if (minRating > 0 && rating < minRating) return false;
     
     if (isRadiusEnabled && role.distance !== undefined) {
       if (role.distance > radius) return false;

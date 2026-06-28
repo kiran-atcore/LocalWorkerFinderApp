@@ -30,11 +30,40 @@ const formatTimeAgo = (dateString: string) => {
 function CustomerHomeScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [parsedQuery, setParsedQuery] = useState('');
   const [radius, setRadius] = useState(50); // Default 50km
   const [isRadiusEnabled, setIsRadiusEnabled] = useState(true);
   const [workers, setWorkers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { isAuthenticated, searchLocation, isLocationLoading } = useAuthStore();
+
+  // Debounced NLP Parse
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      if (searchQuery) {
+        try {
+          const res = await api.get(`core/parse-query/?q=${encodeURIComponent(searchQuery)}`);
+          if (res.data) {
+            setParsedQuery(res.data.search_text || '');
+            if (res.data.radius) {
+              setRadius(res.data.radius);
+              setIsRadiusEnabled(true);
+            } else {
+              setIsRadiusEnabled(false);
+            }
+          }
+        } catch (e) {
+          console.error('NLP Parse error', e);
+          setParsedQuery(searchQuery);
+        }
+      } else {
+        setParsedQuery('');
+        setRadius(50);
+        setIsRadiusEnabled(false);
+      }
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   useFocusEffect(
     useCallback(() => {
@@ -44,7 +73,7 @@ function CustomerHomeScreen() {
 
       const fetchWorkers = async () => {
         try {
-          const res = await api.get(`users/featured-workers/?search=${searchQuery}`);
+          const res = await api.get(`users/featured-workers/?search=${parsedQuery}`);
           setWorkers(res.data);
         } catch (error) {
           console.error('Failed to fetch featured workers:', error);
@@ -54,7 +83,7 @@ function CustomerHomeScreen() {
       };
 
       fetchWorkers();
-    }, [searchQuery, isAuthenticated])
+    }, [parsedQuery, isAuthenticated])
   );
 
   const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -147,6 +176,16 @@ function CustomerHomeScreen() {
           />
         </View>
 
+        <View style={styles.mapButtonContainer}>
+          <TouchableOpacity
+            style={styles.mapButton}
+            onPress={() => (router.push as any)('/RadarMap/workers')}
+          >
+            <Ionicons name="map-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.mapButtonText}>View Workers Nearby on Map</Text>
+          </TouchableOpacity>
+        </View>
+
         {isLoading || isLocationLoading || (!searchLocation && isRadiusEnabled) ? (
           <ActivityIndicator size="large" color="#007aff" style={{ marginTop: 20 }} />
         ) : filteredWorkers.length > 0 ? (
@@ -174,8 +213,11 @@ function CustomerHomeScreen() {
 function WorkerHomeScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [parsedQuery, setParsedQuery] = useState('');
   const [radius, setRadius] = useState(50);
-  const [isRadiusEnabled, setIsRadiusEnabled] = useState(true);
+  const [isRadiusEnabled, setIsRadiusEnabled] = useState(false);
+  const [maxRate, setMaxRate] = useState<number | null>(null);
+  const [minRate, setMinRate] = useState<number | null>(null);
   const [vacancies, setVacancies] = useState<any[]>([]);
   const [appliedJobs, setAppliedJobs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -183,6 +225,38 @@ function WorkerHomeScreen() {
   const { isAuthenticated, searchLocation, isLocationLoading } = useAuthStore();
 
   const SORT_OPTIONS = ['Latest', 'Oldest', 'Most applicants', 'Most Paid', 'Nearest'];
+
+  // Debounced NLP Parse
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      if (searchQuery) {
+        try {
+          const res = await api.get(`core/parse-query/?q=${encodeURIComponent(searchQuery)}`);
+          if (res.data) {
+            setParsedQuery(res.data.search_text || '');
+            if (res.data.radius) {
+              setRadius(res.data.radius);
+              setIsRadiusEnabled(true);
+            } else {
+              setIsRadiusEnabled(false);
+            }
+            setMaxRate(res.data.max_rate || null);
+            setMinRate(res.data.min_rate || null);
+          }
+        } catch (e) {
+          console.error('NLP Parse error', e);
+          setParsedQuery(searchQuery);
+        }
+      } else {
+        setParsedQuery('');
+        setRadius(50);
+        setIsRadiusEnabled(false);
+        setMaxRate(null);
+        setMinRate(null);
+      }
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   useFocusEffect(
     useCallback(() => {
@@ -193,7 +267,7 @@ function WorkerHomeScreen() {
       const fetchVacanciesAndApplications = async () => {
         try {
           const [vacanciesRes, applicationsRes] = await Promise.all([
-            api.get(`bookings/vacancies/?search=${searchQuery}`),
+            api.get(`bookings/vacancies/?search=${parsedQuery}`),
             api.get('bookings/applications/?role=worker')
           ]);
           setVacancies(vacanciesRes.data);
@@ -210,7 +284,7 @@ function WorkerHomeScreen() {
       }, 300);
 
       return () => clearTimeout(delayDebounceFn);
-    }, [searchQuery, isAuthenticated])
+    }, [parsedQuery, isAuthenticated])
   );
 
   const handleCancelApplication = (applicationId: number) => {
@@ -260,6 +334,12 @@ function WorkerHomeScreen() {
 
   const filteredVacancies = vacanciesWithDistance.filter(v => {
     if (v.has_applied) return false;
+    
+    // Apply rate filters
+    const rate = parseFloat(v.remuneration) || 0;
+    if (maxRate !== null && rate > maxRate) return false;
+    if (minRate !== null && rate < minRate) return false;
+
     if (!isRadiusEnabled) return true;
     if (v.distance === undefined) return false;
     return v.distance <= radius;
@@ -381,6 +461,16 @@ function WorkerHomeScreen() {
             maximumTrackTintColor="#ddd"
             thumbTintColor={isRadiusEnabled ? "#007aff" : "#bbb"}
           />
+        </View>
+
+        <View style={styles.mapButtonContainer}>
+          <TouchableOpacity
+            style={styles.mapButton}
+            onPress={() => (router.push as any)('/RadarMap/jobs')}
+          >
+            <Ionicons name="map-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.mapButtonText}>View Jobs Nearby on Map</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.sortContainer}>
@@ -527,4 +617,7 @@ const styles = StyleSheet.create({
   appliedTrashBtn: { padding: 8, backgroundColor: '#FFEBEE', borderRadius: 20 },
   appliedSkillBadge: { backgroundColor: '#F0F0F0', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
   appliedSkillText: { fontSize: 11, color: '#555', fontWeight: '500' },
+  mapButtonContainer: { paddingHorizontal: 15, marginBottom: 15 },
+  mapButton: { backgroundColor: '#4CAF50', padding: 12, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  mapButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

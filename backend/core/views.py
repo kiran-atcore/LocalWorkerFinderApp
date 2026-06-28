@@ -262,3 +262,18 @@ class BlockedUserViewSet(viewsets.ModelViewSet):
             'is_blocked_by_me': is_blocked_by_me,
             'is_blocked_by_other': is_blocked_by_other
         })
+
+from .nlp import parse_nl_query
+from rest_framework.views import APIView
+from rest_framework import permissions
+
+class ParseQueryView(APIView):
+    """
+    API View to parse natural language search queries and return structured filters.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        query = request.query_params.get('q', '')
+        parsed_data = parse_nl_query(query)
+        return Response(parsed_data)

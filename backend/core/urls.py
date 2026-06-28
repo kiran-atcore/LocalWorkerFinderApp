@@ -35,7 +35,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
-from core.views import ConversationViewSet, MessageViewSet, BlockedUserViewSet
+from core.views import ConversationViewSet, MessageViewSet, BlockedUserViewSet, ParseQueryView
 
 router = DefaultRouter()
 router.register(r'conversations', ConversationViewSet, basename='conversation')
@@ -47,5 +47,6 @@ urlpatterns = [
     path('api/users/', include('users.urls')),
     path('api/services/', include('services.urls')),
     path('api/bookings/', include('bookings.urls')),
+    path('api/core/parse-query/', ParseQueryView.as_view(), name='parse_query'),
     path('api/core/', include(router.urls)),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

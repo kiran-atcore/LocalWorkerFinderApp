@@ -25,7 +25,7 @@ export default function OTPScreen() {
   }, [email]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (resendTimer > 0) {
       interval = setInterval(() => {
         setResendTimer((prev) => prev - 1);
@@ -35,7 +35,7 @@ export default function OTPScreen() {
   }, [resendTimer]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (expiryTimer > 0) {
       interval = setInterval(() => {
         setExpiryTimer((prev) => prev - 1);
