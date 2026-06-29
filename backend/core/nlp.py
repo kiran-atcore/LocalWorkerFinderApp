@@ -1,10 +1,33 @@
 import re
+import os
+import json
+import logging
+from groq import Groq
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
+
+# Initialize Groq client
+# Fallback to empty string to prevent crash on init; API will error on use if empty
+# Load .env manually since python-dotenv might not be installed
+env_path = os.path.join(settings.BASE_DIR, '.env')
+groq_api_key = os.environ.get("GROQ_API_KEY", "")
+
+if not groq_api_key and os.path.exists(env_path):
+    with open(env_path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("GROQ_API_KEY="):
+                groq_api_key = line.split('=', 1)[1].strip().strip('"').strip("'")
+                break
+
+client = Groq(api_key=groq_api_key) if groq_api_key else None
 
 def parse_nl_query(query: str):
     """
-    Parses a natural language query and extracts structured filters.
+    Parses a natural language query and extracts structured filters using Groq AI.
     """
-    if not query:
+    if not query or not query.strip():
         return {
             "search_text": "",
             "radius": None,
@@ -14,203 +37,141 @@ def parse_nl_query(query: str):
             "min_rating": None
         }
 
-    original_query = query.lower()
-    search_text = original_query
-    radius = None
-    max_rate = None
-    min_rate = None
-    min_experience = None
-    min_rating = None
+    # If Groq is not configured, fallback to simple text parsing
+    if not client:
+        logger.warning("GROQ_API_KEY is not set. Falling back to simple text parsing.")
+        return _fallback_parse(query)
 
-    # 1. Parse Radius & Distance
-    if any(word in search_text for word in ["near me", "nearby", "close by", "local", "around here", "in my area"]):
-        radius = 5
-        for word in ["near me", "nearby", "close by", "local", "around here", "in my area"]:
-            search_text = search_text.replace(word, "")
+    system_prompt = """
+    You are an intelligent search query parser for a local worker finding application.
+    Extract filtering parameters from the user's natural language query.
+    Return ONLY a valid JSON object with EXACTLY the following keys (use null if not mentioned):
+    - "search_text": A string containing the core search intent (e.g., job role, skill, task). Remove ALL filler words including: "looking for", "find me", "near me", "jobs", "job", "workers", "worker", "rate", "paying", "with", "who", "that", "price", "distance", etc. Use base categories if applicable (e.g., "plumbing", "electrical", "cleaning", "carpentry", "painting", "gardening", "appliance", "moving", "pest_control", "home_security", "mechanic", "handyman", "tiler", "roofer", "mason", "arborist", "delivery", "transportation"). If the entire query was just filters (e.g. "jobs with rate above 200"), this MUST be an empty string "".
+    - "radius": An integer representing the search radius in kilometers (e.g. "within 50km" equals 50, "near me" equals 5, "10 miles" equals 16).
+    - "max_rate": An integer representing the maximum hourly rate budget (e.g., "under 50", "max 100", "less than 50", "maximum 100", "cheaper than 40", "budget 60").
+    - "min_rate": An integer representing the minimum hourly rate expected (e.g., "above 50", "more than 50", "min 20", "minimum 50", "at least 50", "pays 60+").
+    - "min_experience": An integer representing the minimum years of experience (e.g., "5+ years exp" equals 5, "highly experienced" equals 5).
+    - "min_rating": A float representing the minimum star rating (e.g., "4 stars" equals 4.0, "top rated" equals 4.5, "better than 3" equals 3.5).
     
-    # "within 50 km", "no more than 20 miles away", "less than 10km"
-    radius_match = re.search(r'(?:within|in|around|under|less than|no more than)\s*(?:a\s*)?(\d+)\s*(?:kilometers|miles|km|mi)\b', search_text)
-    if not radius_match:
-        radius_match = re.search(r'(\d+)\s*(?:kilometers|miles|km|mi)\b\s*(?:radius|away)', search_text)
-        
-    if radius_match:
-        radius = int(radius_match.group(1))
-        search_text = search_text.replace(radius_match.group(0), "")
+    IMPORTANT: Pay close attention to "above" vs "under" and implied constraints. 
+    "Jobs with rate above 200" should map to min_rate = 200. 
+    "Workers under 50" should map to max_rate = 50.
+    """
 
-    # 2. Parse Rate Ranges & Budgets
-    # "between 50 and 100", "50 to 100", "$50-$100"
-    range_match = re.search(r'(?:between\s*)?\$?(\d+)\s*(?:and|to|-)\s*\$?(\d+)', search_text)
-    if range_match:
-        min_rate = int(range_match.group(1))
-        max_rate = int(range_match.group(2))
-        search_text = search_text.replace(range_match.group(0), "")
-    else:
-        # Max Rate: "rate below 100", "under 100", "< 100", "max 100", "maximum 100 bucks per hour"
-        max_match = re.search(r'(?:rate|price|cost|wage|budget|max|maximum|charges|paying)?\s*(?:below|bellow|under|less than|<|max|maximum|no more than)\s*\$?\s*(\d+)\s*(?:bucks|dollars|pay)?\s*(?:/hr|per hour|an hour|a hour)?', search_text)
-        if max_match:
-            max_rate = int(max_match.group(1))
-            search_text = search_text.replace(max_match.group(0), "")
+    try:
+        response = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Query: {query}"}
+            ],
+            model="llama-3.1-8b-instant",
+            temperature=0,
+            response_format={"type": "json_object"}
+        )
+        
+        data = json.loads(response.choices[0].message.content)
+        
+        # Aggressively clean up search_text in Python to prevent AI hallucinations
+        search_text = data.get("search_text", "") or ""
+        if search_text:
+            search_text = search_text.lower()
+            fillers = [
+                r'\bjobs?\b', r'\bworkers?\b', r'\bprofessionals?\b', r'\bpeople\b', r'\bsomeone\b', r'\bperson\b',
+                r'\brate\b', r'\babove\b', r'\bunder\b', r'\bbelow\b', r'\bover\b', r'\bmore than\b', r'\bless than\b',
+                r'\bpaying\b', r'\bpays?\b', r'\bbudget\b', r'\bcost\b', r'\bprice\b', r'\bcheap\b', r'\bexpensive\b',
+                r'\bwith\b', r'\bwho\b', r'\bthat\b', r'\bcan\b', r'\bdo\b', r'\bis\b', r'\bare\b', r'\bhas\b', r'\bhave\b',
+                r'\bdistance\b', r'\blooking for\b', r'\bfind me\b', r'\bnear me\b', r'\bnearby\b', r'\baround me\b',
+                r'\bminimum\b', r'\bmaximum\b', r'\bleast\b', r'\bat most\b', r'\bat least\b',
+                r'\bwithin\b', r'\bkm\b', r'\bmiles?\b', r'\bkilometers?\b', r'\bradius\b',
+                r'\byears?\b', r'\bexp\b', r'\byoe\b', r'\bexperience\b', r'\bexperienced\b',
+                r'\brating\b', r'\bstars?\b', r'\btop rated\b', r'\bhighly rated\b', r'\breviews?\b',
+                r'\bhourly\b', r'\bper hour\b', r'\ban hour\b', r'\ba hour\b', r'\bhr\b',
+                r'\bfor\b', r'\bin\b', r'\ba\b', r'\ban\b', r'\bthe\b', r'\bto\b', r'\bof\b', r'\band\b',
+                r'\bneed\b', r'\bwant\b', r'\bsearch\b', r'\bshow\b', r'\bget\b', r'\bme\b'
+            ]
+            for f in fillers:
+                search_text = re.sub(f, '', search_text)
             
-        # Min Rate: "rate above 50", "> 50", "min 50", "minimum 50", "starting from 50", "paying at least"
-        min_match = re.search(r'(?:rate|price|cost|wage|min|minimum|paying|charges)?\s*(?:above|over|more than|>|min|minimum|starting from|at least)\s*\$?\s*(\d+)\s*(?:bucks|dollars|pay)?\s*(?:/hr|per hour|an hour|a hour)?', search_text)
-        if min_match:
-            min_rate = int(min_match.group(1))
-            search_text = search_text.replace(min_match.group(0), "")
-
-    # Budget keywords
-    if "cheap" in search_text or "affordable" in search_text or "low cost" in search_text:
-        max_rate = max_rate or 50
-        for w in ["cheap", "affordable", "low cost"]:
-            search_text = search_text.replace(w, "")
+            # Remove isolated numbers and special characters that might be leftover from rate/distance
+            search_text = re.sub(r'\b\d+(\.\d+)?\b', '', search_text)
+            search_text = re.sub(r'[^\w\s]', '', search_text)
             
-    if "expensive" in search_text or "premium" in search_text or "high paying" in search_text:
-        min_rate = min_rate or 100
-        for w in ["expensive", "premium", "high paying"]:
-            search_text = search_text.replace(w, "")
-
-    # 3. Parse Ratings
-    # "4 stars", "5 star rated", "rating > 4", "at least 4 stars"
-    rating_match = re.search(r'(?:at least\s*|rating\s*(?:>|over)\s*)?(\d+(?:\.\d+)?)\s*(?:stars?|star rated)', search_text)
-    if rating_match:
-        min_rating = float(rating_match.group(1))
-        search_text = search_text.replace(rating_match.group(0), "")
-    
-    if any(word in search_text for word in ["top rated", "highly rated", "best rated", "great reviews", "good reviews", "best", "top tier"]):
-        min_rating = min_rating or 4.5
-        for word in ["top rated", "highly rated", "best rated", "great reviews", "good reviews", "best", "top tier"]:
-            search_text = search_text.replace(word, "")
-
-    # 4. Parse Min Experience
-    # "at least 5 years experience", "> 5 years"
-    exp_match = re.search(r'(?:at least|>|over|more than|min|minimum)?\s*(\d+)\s*(?:\+|plus)?\s*years?(?:\s*of)?(?:\s*experience)?', search_text)
-    if exp_match:
-        min_experience = int(exp_match.group(1))
-        search_text = search_text.replace(exp_match.group(0), "")
-        
-    if any(word in search_text for word in ["expert", "senior", "master", "highly experienced", "professional"]):
-        min_experience = min_experience or 5
-        for word in ["expert", "senior", "master", "highly experienced", "professional"]:
-            search_text = search_text.replace(word, "")
-
-    # Clean up search text
-    # Remove filler words
-    fillers = [
-        "workers with", "worker with", "workers", "worker", "contractor", "freelancer",
-        "i need a", "i need", "need a", "need", "looking for a", "looking for", 
-        "find me a", "find me", "show me", "searching for", "please find", "can you find me",
-        "someone to", "someone who can", "somebody to", "is there a", "anyone who",
-        "with", "who is", "who has", "that is", "that has", "and", "or", "who charges", "who works for",
-        "jobs", "job", "vacancy", "vacancies", "work", "task", "tasks", "my house", "my car", "my plumbing",
-        "who", "whom", "for", "a", "an", "the", "some", "any", "radius", "away", "distance"
-    ]
-    
-    # Sort fillers by length descending so "workers with" replaces before "workers"
-    fillers.sort(key=len, reverse=True)
-    
-    for filler in fillers:
-        # We run this multiple times to catch layered fillers like "a who"
-        for _ in range(3):
-            # Check start
-            if search_text.startswith(filler + " ") or search_text == filler:
-                search_text = search_text.replace(filler + " ", "", 1).strip()
-                if search_text == filler: search_text = ""
-            # Check end
-            if search_text.endswith(" " + filler):
-                # reverse replace
-                search_text = search_text[::-1].replace((" " + filler)[::-1], "", 1)[::-1].strip()
+            search_text = " ".join(search_text.split()).strip()
             
-    # Clean up stray punctuation or double spaces
-    search_text = re.sub(r'[^\w\s]', '', search_text)
-    search_text = " ".join(search_text.split()).strip()
-    
-    # Run filler removal one more time after removing punctuation
-    for filler in fillers:
-        if search_text.startswith(filler + " ") or search_text == filler:
-            search_text = search_text.replace(filler + " ", "", 1).strip()
-            if search_text == filler: search_text = ""
-        if search_text.endswith(" " + filler):
-            search_text = search_text[::-1].replace((" " + filler)[::-1], "", 1)[::-1].strip()
+            # Verb/Field to Role Mappings
+            role_mappings = {
+                "painting": "painter",
+                "paint": "painter",
+                "carpentry": "carpenter",
+                "woodwork": "carpenter",
+                "fixing": "handyman",
+                "repair": "handyman",
+                "repairing": "handyman",
+                "wiring": "electrician",
+                "electrical": "electrician",
+                "wires": "electrician",
+                "pipes": "plumber",
+                "plumbing": "plumber",
+                "trees": "arborist",
+                "tree cutting": "arborist",
+                "tree": "arborist",
+                "bugs": "exterminator",
+                "pest control": "exterminator",
+                "cleaning": "cleaner",
+                "gardening": "gardener",
+                "garden": "gardener",
+                "moving": "mover",
+                "tiling": "tiler",
+                "tiles": "tiler",
+                "roofing": "roofer",
+                "roof": "roofer",
+                "masonry": "mason",
+                "bricks": "mason",
+                "delivering": "delivery",
+                "driving": "driver",
+                "transporting": "transporter",
+                "mechanics": "mechanic",
+                "cars": "mechanic",
+                "auto": "mechanic"
+            }
             
-    search_text = " ".join(search_text.split()).strip()
+            # Apply mapping if there's a direct match
+            if search_text in role_mappings:
+                search_text = role_mappings[search_text]
+                
+            data["search_text"] = search_text
 
-    # 5. Synonym & Role Normalization (Maximized)
-    # We map roles and synonyms directly to the category IDs found in frontend/src/constants/categories.ts
-    # so that job_roles__category__icontains matches perfectly.
-    role_mappings = {
-        # Roles -> Categories
-        "painter": "painting",
-        "carpenter": "carpentry",
-        "plumber": "plumbing",
-        "electrician": "electrical",
-        "cleaner": "cleaning",
-        "gardener": "gardening",
-        "mover": "moving",
-        "exterminator": "pest_control",
-        "technician": "appliance",
-        "courier": "delivery",
-        "guard": "home_security",
-        "security guard": "home_security",
-        "driver": "transportation",
-        
-        # Plurals -> Categories
-        "painters": "painting",
-        "carpenters": "carpentry",
-        "plumbers": "plumbing",
-        "electricians": "electrical",
-        "cleaners": "cleaning",
-        "gardeners": "gardening",
-        "movers": "moving",
-        "exterminators": "pest_control",
-        "technicians": "appliance",
-        "couriers": "delivery",
-        "guards": "home_security",
-        "drivers": "transportation",
-        "mechanics": "mechanic",
-        "handymen": "handyman",
-        "tilers": "tiler",
-        "roofers": "roofer",
-        "masons": "mason",
-        "arborists": "arborist",
-        
-        # Synonyms / Verbs -> Categories
-        "paint": "painting",
-        "build": "carpentry",
-        "woodwork": "carpentry",
-        "clean": "cleaning",
-        "garden": "gardening",
-        "move": "moving",
-        "pest": "pest_control",
-        "bugs": "pest_control",
-        "appliance repair": "appliance",
-        "appliances": "appliance",
-        "cars": "mechanic",
-        "car repair": "mechanic",
-        "auto": "mechanic",
-        "wiring": "electrical",
-        "pipes": "plumbing",
-        "fixing": "handyman",
-        "repair": "handyman",
-        "repairs": "handyman",
-        "trees": "arborist",
-        "tree cutting": "arborist",
-        "delivery driver": "delivery",
-        "transport": "transportation"
-    }
+        # Return standardized types
+        return {
+            "search_text": data.get("search_text", ""),
+            "radius": int(data.get("radius")) if data.get("radius") is not None else None,
+            "max_rate": int(data.get("max_rate")) if data.get("max_rate") is not None else None,
+            "min_rate": int(data.get("min_rate")) if data.get("min_rate") is not None else None,
+            "min_experience": int(data.get("min_experience")) if data.get("min_experience") is not None else None,
+            "min_rating": float(data.get("min_rating")) if data.get("min_rating") is not None else None
+        }
+    except Exception as e:
+        logger.error(f"Groq NLP parse error: {str(e)}")
+        return _fallback_parse(query)
+
+
+def _fallback_parse(query: str):
+    """Fallback basic parsing when AI fails or key is missing."""
+    search_text = query.lower()
     
-    # Replace entire words using regex word boundaries to avoid partial matches
-    # We sort keys by length descending to match multi-word phrases (like 'pest control') first
-    for syn in sorted(role_mappings.keys(), key=len, reverse=True):
-        role = role_mappings[syn]
-        # Use regex word boundaries for safe replacement
-        search_text = re.sub(rf'\b{syn}\b', role, search_text)
+    # basic radius
+    radius = 5 if any(w in search_text for w in ["near me", "nearby", "local"]) else None
+    
+    # basic cleanup
+    fillers = ["looking for", "find me", "someone to", "i need", "workers", "a ", "an ", "the "]
+    for f in fillers:
+        search_text = search_text.replace(f, "")
         
-    search_text = " ".join(search_text.split()).strip()
-
     return {
-        "search_text": search_text,
+        "search_text": search_text.strip(),
         "radius": radius,
-        "max_rate": max_rate,
-        "min_rate": min_rate,
-        "min_experience": min_experience,
-        "min_rating": min_rating
+        "max_rate": None,
+        "min_rate": None,
+        "min_experience": None,
+        "min_rating": None
     }

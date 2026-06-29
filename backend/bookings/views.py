@@ -28,7 +28,16 @@ class BookingViewSet(viewsets.ModelViewSet):
         customer = self.request.user.customer_profile
         job_role = serializer.validated_data['job_role']
         worker = job_role.worker
-        serializer.save(customer=customer, worker=worker, status='PENDING')
+        booking = serializer.save(customer=customer, worker=worker, status='PENDING')
+        
+        from core.notifications import send_push_notification
+        customer_name = customer.user.first_name or customer.user.username
+        send_push_notification(
+            user=worker.user,
+            title="New Incoming Booking!",
+            body=f"{customer_name} has requested a booking for your {job_role.category} service.",
+            data={"type": "booking", "booking_id": booking.id}
+        )
 
     @action(detail=True, methods=['post'])
     def accept(self, request, pk=None):
@@ -142,10 +151,27 @@ class JobVacancyViewSet(viewsets.ModelViewSet):
                 if hasattr(user, 'customer_profile'):
                     worker_qs = worker_qs.exclude(customer=user.customer_profile)
                     
-                search = self.request.query_params.get('search', '')
+                search = self.request.query_params.get('search', '').strip().lower()
                 if search:
+                    # Reverse mapping for display names
+                    role_to_category = {
+                        "painter": "painting",
+                        "carpenter": "carpentry",
+                        "electrician": "electrical",
+                        "plumber": "plumbing",
+                        "exterminator": "pest control",
+                        "cleaner": "cleaning",
+                        "gardener": "gardening",
+                        "mover": "moving",
+                        "driver": "transportation",
+                        "transporter": "transportation"
+                    }
+                    category_match = role_to_category.get(search, search)
+                    
                     worker_qs = worker_qs.filter(
-                        Q(category__icontains=search) | Q(description__icontains=search)
+                        Q(category__icontains=search) | 
+                        Q(description__icontains=search) |
+                        Q(category__icontains=category_match)
                     )
                 return worker_qs
             elif self.action in ['retrieve', 'apply']:
@@ -195,6 +221,15 @@ class JobVacancyViewSet(viewsets.ModelViewSet):
             status='PENDING'
         )
 
+        from core.notifications import send_push_notification
+        worker_name = worker.user.first_name or worker.user.username
+        send_push_notification(
+            user=vacancy.customer.user,
+            title="New Job Application!",
+            body=f"{worker_name} applied to your '{vacancy.category}' vacancy.",
+            data={"type": "application", "application_id": application.id, "vacancy_id": vacancy.id}
+        )
+
         return Response(JobApplicationSerializer(application).data, status=status.HTTP_201_CREATED)
 
 class JobApplicationViewSet(viewsets.ModelViewSet):
@@ -224,6 +259,16 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
         
         application.status = 'ACCEPTED'
         application.save()
+        
+        from core.notifications import send_push_notification
+        customer_name = request.user.first_name or request.user.username
+        send_push_notification(
+            user=application.worker.user,
+            title="You're Hired!",
+            body=f"{customer_name} accepted your application for '{application.vacancy.category}'.",
+            data={"type": "hired", "application_id": application.id}
+        )
+        
         return Response(self.get_serializer(application).data)
 
     @action(detail=True, methods=['post'])

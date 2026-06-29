@@ -21,7 +21,8 @@ class UserSerializer(serializers.ModelSerializer):
             return obj.customer_profile.profile_photo.url
         return None
 
-from .models import CustomerProfile, WorkerProfile
+from .models import CustomerProfile, WorkerProfile, Review
+from django.db.models import Avg, Count
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
@@ -30,13 +31,53 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
         model = CustomerProfile
         fields = ['id', 'user', 'profile_photo', 'latitude', 'longitude', 'address_text', 'created_at']
 
+class ReviewSerializer(serializers.ModelSerializer):
+    customer = CustomerProfileSerializer(read_only=True)
+    
+    class Meta:
+        model = Review
+        fields = ['id', 'worker', 'customer', 'skill_rating', 'performance_rating', 
+                  'service_quality_rating', 'friendly_rating', 'cost_efficiency_rating', 
+                  'overall_rating', 'review_text', 'created_at', 'updated_at']
+        read_only_fields = ['overall_rating', 'customer']
+
 class WorkerProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    review_stats = serializers.SerializerMethodField()
+    has_reviewed = serializers.SerializerMethodField()
 
     class Meta:
         model = WorkerProfile
-        fields = ['id', 'user', 'profile_photo', 'business_name', 'bio', 'skills', 'rating', 'total_earnings', 'latitude', 'longitude', 'address_text', 'created_at']
+        fields = ['id', 'user', 'profile_photo', 'business_name', 'bio', 'skills', 'rating', 'total_earnings', 'latitude', 'longitude', 'address_text', 'created_at', 'review_stats', 'has_reviewed']
         read_only_fields = ['rating', 'total_earnings']
+
+    def get_review_stats(self, obj):
+        reviews = obj.reviews.all()
+        if not reviews.exists():
+            return None
+        
+        stats = reviews.aggregate(
+            skill=Avg('skill_rating'),
+            performance=Avg('performance_rating'),
+            service_quality=Avg('service_quality_rating'),
+            friendly=Avg('friendly_rating'),
+            cost_efficiency=Avg('cost_efficiency_rating'),
+            total_reviews=Count('id')
+        )
+        return {
+            'skill': round(stats['skill'] or 0, 1),
+            'performance': round(stats['performance'] or 0, 1),
+            'service_quality': round(stats['service_quality'] or 0, 1),
+            'friendly': round(stats['friendly'] or 0, 1),
+            'cost_efficiency': round(stats['cost_efficiency'] or 0, 1),
+            'total_reviews': stats['total_reviews']
+        }
+        
+    def get_has_reviewed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated and hasattr(request.user, 'customer_profile'):
+            return obj.reviews.filter(customer=request.user.customer_profile).exists()
+        return False
 
 class FeaturedWorkerSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)

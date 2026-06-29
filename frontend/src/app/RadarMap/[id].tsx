@@ -38,16 +38,16 @@ export default function RadarMapPage() {
           const res = await api.get(`core/parse-query/?q=${encodeURIComponent(searchQuery)}`);
           if (res.data) {
             setParsedQuery(res.data.search_text || '');
-            if (res.data.radius) {
+            if (res.data.radius !== null && res.data.radius !== undefined) {
               setRadius(res.data.radius);
               setIsRadiusEnabled(true);
             } else {
               setIsRadiusEnabled(false);
             }
-            setMaxRate(res.data.max_rate || null);
-            setMinRate(res.data.min_rate || null);
-            setMinRating(res.data.min_rating || null);
-            setMinExp(res.data.min_experience || null);
+            if (res.data.max_rate !== null && res.data.max_rate !== undefined) setMaxRate(res.data.max_rate); else setMaxRate(null);
+            if (res.data.min_rate !== null && res.data.min_rate !== undefined) setMinRate(res.data.min_rate); else setMinRate(null);
+            if (res.data.min_rating !== null && res.data.min_rating !== undefined) setMinRating(res.data.min_rating); else setMinRating(null);
+            if (res.data.min_experience !== null && res.data.min_experience !== undefined) setMinExp(res.data.min_experience); else setMinExp(null);
           }
         } catch (e) {
           console.error('NLP Parse error', e);
@@ -55,7 +55,6 @@ export default function RadarMapPage() {
         }
       } else {
         setParsedQuery('');
-        setRadius(50);
         setIsRadiusEnabled(false);
         setMaxRate(null);
         setMinRate(null);
@@ -123,14 +122,29 @@ export default function RadarMapPage() {
       // 1. Search Query
       const query = parsedQuery.toLowerCase();
       if (query) {
+        // Reverse mapping for display names
+        const roleToCategory: Record<string, string> = {
+          "painter": "painting",
+          "carpenter": "carpentry",
+          "electrician": "electrical",
+          "plumber": "plumbing",
+          "exterminator": "pest control",
+          "cleaner": "cleaning",
+          "gardener": "gardening",
+          "mover": "moving",
+          "driver": "transportation",
+          "transporter": "transportation"
+        };
+        const categoryMatchStr = roleToCategory[query] || query;
+
         if (id === 'workers') {
           const name = (item.business_name || `${item.user?.first_name || ''} ${item.user?.last_name || ''}`.trim() || item.user?.username || '').toLowerCase();
           const skills = (item.categories || []).join(' ').toLowerCase();
-          if (!name.includes(query) && !skills.includes(query)) return false;
+          if (!name.includes(query) && !skills.includes(query) && !skills.includes(categoryMatchStr)) return false;
         } else {
           const title = (item.title || '').toLowerCase();
           const cat = (item.category || '').toLowerCase();
-          if (!title.includes(query) && !cat.includes(query)) return false;
+          if (!title.includes(query) && !cat.includes(query) && !cat.includes(categoryMatchStr)) return false;
         }
       }
 

@@ -208,6 +208,16 @@ class MessageViewSet(viewsets.ModelViewSet):
         conversation.worker_deleted = False
         conversation.save()
 
+        # Send push notification
+        from core.notifications import send_push_notification
+        sender_name = request.user.first_name or request.user.username
+        send_push_notification(
+            user=other_user,
+            title=f"New message from {sender_name}",
+            body=text[:100] + ("..." if len(text) > 100 else ""),
+            data={"type": "chat", "conversation_id": conversation.id}
+        )
+
         serializer = self.get_serializer(message)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 

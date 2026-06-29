@@ -33,6 +33,7 @@ function CustomerHomeScreen() {
   const [parsedQuery, setParsedQuery] = useState('');
   const [radius, setRadius] = useState(50); // Default 50km
   const [isRadiusEnabled, setIsRadiusEnabled] = useState(true);
+  const [minRating, setMinRating] = useState<number | null>(null);
   const [workers, setWorkers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { isAuthenticated, searchLocation, isLocationLoading } = useAuthStore();
@@ -45,12 +46,13 @@ function CustomerHomeScreen() {
           const res = await api.get(`core/parse-query/?q=${encodeURIComponent(searchQuery)}`);
           if (res.data) {
             setParsedQuery(res.data.search_text || '');
-            if (res.data.radius) {
+            if (res.data.radius !== null && res.data.radius !== undefined) {
               setRadius(res.data.radius);
               setIsRadiusEnabled(true);
             } else {
               setIsRadiusEnabled(false);
             }
+            if (res.data.min_rating !== null && res.data.min_rating !== undefined) setMinRating(res.data.min_rating); else setMinRating(null);
           }
         } catch (e) {
           console.error('NLP Parse error', e);
@@ -58,8 +60,8 @@ function CustomerHomeScreen() {
         }
       } else {
         setParsedQuery('');
-        setRadius(50);
         setIsRadiusEnabled(false);
+        setMinRating(null);
       }
     }, 500);
     return () => clearTimeout(handler);
@@ -106,6 +108,11 @@ function CustomerHomeScreen() {
   });
 
   const filteredWorkers = workersWithDistance.filter(w => {
+    if (minRating !== null) {
+      const rating = parseFloat(w.rating) || 0;
+      if (rating < minRating) return false;
+    }
+    
     if (!isRadiusEnabled) return true;
     if (w.distance === undefined) return false;
     return w.distance <= radius;
@@ -234,14 +241,14 @@ function WorkerHomeScreen() {
           const res = await api.get(`core/parse-query/?q=${encodeURIComponent(searchQuery)}`);
           if (res.data) {
             setParsedQuery(res.data.search_text || '');
-            if (res.data.radius) {
+            if (res.data.radius !== null && res.data.radius !== undefined) {
               setRadius(res.data.radius);
               setIsRadiusEnabled(true);
             } else {
               setIsRadiusEnabled(false);
             }
-            setMaxRate(res.data.max_rate || null);
-            setMinRate(res.data.min_rate || null);
+            if (res.data.max_rate !== null && res.data.max_rate !== undefined) setMaxRate(res.data.max_rate); else setMaxRate(null);
+            if (res.data.min_rate !== null && res.data.min_rate !== undefined) setMinRate(res.data.min_rate); else setMinRate(null);
           }
         } catch (e) {
           console.error('NLP Parse error', e);
@@ -249,7 +256,6 @@ function WorkerHomeScreen() {
         }
       } else {
         setParsedQuery('');
-        setRadius(50);
         setIsRadiusEnabled(false);
         setMaxRate(null);
         setMinRate(null);

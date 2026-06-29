@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import api, { getImageUrl } from '../../services/axios';
 import { useAuthStore } from '../../store/useAuthStore';
+import { CATEGORIES } from '../../constants/categories';
 
 export default function CategoryListScreen() {
   const { id } = useLocalSearchParams();
@@ -37,16 +38,16 @@ export default function CategoryListScreen() {
           const res = await api.get(`core/parse-query/?q=${encodeURIComponent(searchText)}`);
           if (res.data) {
             setParsedText(res.data.search_text || '');
-            if (res.data.radius) {
+            if (res.data.radius !== null && res.data.radius !== undefined) {
               setRadius(res.data.radius);
               setIsRadiusEnabled(true);
             } else {
               setIsRadiusEnabled(false);
             }
-            setMaxRate(res.data.max_rate !== null ? res.data.max_rate : 200);
-            setMinRate(res.data.min_rate !== null ? res.data.min_rate : 0);
-            setMinRating(res.data.min_rating !== null ? res.data.min_rating : 0);
-            setMinExp(res.data.min_experience !== null ? res.data.min_experience : 0);
+            if (res.data.max_rate !== null && res.data.max_rate !== undefined) setMaxRate(res.data.max_rate); else setMaxRate(200);
+            if (res.data.min_rate !== null && res.data.min_rate !== undefined) setMinRate(res.data.min_rate); else setMinRate(0);
+            if (res.data.min_rating !== null && res.data.min_rating !== undefined) setMinRating(res.data.min_rating); else setMinRating(0);
+            if (res.data.min_experience !== null && res.data.min_experience !== undefined) setMinExp(res.data.min_experience); else setMinExp(0);
           }
         } catch (e) {
           console.error('NLP Parse error', e);
@@ -54,7 +55,6 @@ export default function CategoryListScreen() {
         }
       } else {
         setParsedText('');
-        setRadius(50);
         setIsRadiusEnabled(false);
         setMaxRate(200);
         setMinRate(0);
@@ -104,8 +104,31 @@ export default function CategoryListScreen() {
   const filteredRoles = rolesWithDistance.filter(role => {
     const worker = role.worker;
     const name = worker.user.first_name ? `${worker.user.first_name} ${worker.user.last_name}` : worker.user.username;
+    const categoryObj = CATEGORIES.find(c => c.id === id);
+    const categoryName = categoryObj ? categoryObj.name.toLowerCase() : '';
     
-    if (parsedText && !name.toLowerCase().includes(parsedText.toLowerCase())) return false;
+    // Reverse mapping for display names
+    const roleToCategory: Record<string, string> = {
+      "painter": "painting",
+      "carpenter": "carpentry",
+      "electrician": "electrical",
+      "plumber": "plumbing",
+      "exterminator": "pest control",
+      "cleaner": "cleaning",
+      "gardener": "gardening",
+      "mover": "moving",
+      "driver": "transportation",
+      "transporter": "transportation"
+    };
+    const parsedTextLower = parsedText.toLowerCase();
+    const categoryMatchStr = roleToCategory[parsedTextLower] || parsedTextLower;
+
+    const isCategoryMatch = categoryName.includes(parsedTextLower) || 
+                            id.toString().toLowerCase().includes(parsedTextLower) ||
+                            categoryName.includes(categoryMatchStr) ||
+                            id.toString().toLowerCase().includes(categoryMatchStr);
+    
+    if (parsedText && !isCategoryMatch && !name.toLowerCase().includes(parsedTextLower)) return false;
     
     const rate = parseFloat(role.hourly_rate) || 0;
     if (maxRate < 200 && rate > maxRate) return false;

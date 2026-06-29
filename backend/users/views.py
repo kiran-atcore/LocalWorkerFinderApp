@@ -253,7 +253,8 @@ class SwitchRoleView(views.APIView):
         elif role == 'customer':
             return Response({"message": "Switched to customer mode.", "active_role": "customer"}, status=status.HTTP_200_OK)
         else:
-            return Response({"error": "Invalid role."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid role.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'Switched to Customer context.'})
 
 class DeleteAccountView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -263,6 +264,22 @@ class DeleteAccountView(views.APIView):
         user.delete()
         logout(request)
         return Response({"message": "Account deleted successfully."}, status=status.HTTP_200_OK)
+
+class DeviceTokenView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        token = request.data.get('token')
+        if not token:
+            return Response({"error": "Token is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        from .models import UserDevice
+        # If token exists, reassign it to the current user (e.g., someone else logged in on the same device)
+        device, created = UserDevice.objects.update_or_create(
+            expo_push_token=token,
+            defaults={'user': request.user}
+        )
+        return Response({"message": "Token registered successfully."}, status=status.HTTP_200_OK)
 
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .serializers import CustomerProfileSerializer, WorkerProfileSerializer
@@ -348,15 +365,68 @@ class FeaturedWorkersView(views.APIView):
         queryset = queryset.exclude(user=request.user)
 
         # Search functionality
-        search_query = request.query_params.get('search', '').strip()
+        search_query = request.query_params.get('search', '').strip().lower()
         if search_query:
+            # Reverse mapping to ensure role searches match the underlying category IDs
+            role_to_category = {
+                "painter": "painting",
+                "carpenter": "carpentry",
+                "electrician": "electrical",
+                "plumber": "plumbing",
+                "exterminator": "pest_control",
+                "cleaner": "cleaning",
+                "gardener": "gardening",
+                "mover": "moving",
+                "driver": "transportation",
+                "transporter": "transportation"
+            }
+            
+            category_match = role_to_category.get(search_query, search_query)
+            
             queryset = queryset.filter(
                 Q(user__first_name__icontains=search_query) |
                 Q(user__last_name__icontains=search_query) |
                 Q(business_name__icontains=search_query) |
-                Q(job_roles__category__icontains=search_query)
+                Q(job_roles__category__icontains=search_query) |
+                Q(job_roles__category__icontains=category_match)
             ).distinct()
 
         # Get top 20 or so
         workers = queryset[:20]
         return Response(FeaturedWorkerSerializer(workers, many=True, context={'request': request}).data)
+
+from rest_framework import viewsets
+from .models import Review
+from .serializers import ReviewSerializer
+from django.db import IntegrityError
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        queryset = Review.objects.all()
+        worker_id = self.request.query_params.get('worker_id', None)
+        if worker_id is not None:
+            queryset = queryset.filter(worker_id=worker_id)
+        return queryset
+
+    def perform_create(self, serializer):
+        customer = self.request.user.customer_profile
+        try:
+            serializer.save(customer=customer)
+        except IntegrityError:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({"error": "You have already reviewed this worker."})
+
+    def perform_update(self, serializer):
+        if serializer.instance.customer.user != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You do not have permission to edit this review.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if instance.customer.user != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You do not have permission to delete this review.")
+        instance.delete()

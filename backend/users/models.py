@@ -58,5 +58,46 @@ class BlockedUser(models.Model):
     class Meta:
         unique_together = ('blocker', 'blocked', 'role')
 
+class UserDevice(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='devices')
+    expo_push_token = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s Device"
+
     def __str__(self):
         return f"{self.blocker.username} blocked {self.blocked.username} as {self.role}"
+
+class Review(models.Model):
+    worker = models.ForeignKey(WorkerProfile, on_delete=models.CASCADE, related_name='reviews')
+    customer = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, related_name='reviews')
+    
+    # Rating categories (1 to 5 stars)
+    skill_rating = models.IntegerField(default=5)
+    performance_rating = models.IntegerField(default=5)
+    service_quality_rating = models.IntegerField(default=5)
+    friendly_rating = models.IntegerField(default=5)
+    cost_efficiency_rating = models.IntegerField(default=5)
+    
+    overall_rating = models.FloatField(default=5.0)
+    review_text = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('worker', 'customer')
+        ordering = ['-created_at']
+
+    def save(self, *args, **kwargs):
+        # Calculate overall rating before saving
+        total = (self.skill_rating + self.performance_rating + 
+                self.service_quality_rating + self.friendly_rating + 
+                self.cost_efficiency_rating)
+        self.overall_rating = total / 5.0
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Review by {self.customer.user.username} for {self.worker.user.username}"
