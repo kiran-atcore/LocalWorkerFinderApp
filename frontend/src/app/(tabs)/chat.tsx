@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, RefreshControl, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, RefreshControl, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useRouter } from 'expo-router';
@@ -40,8 +40,8 @@ export default function ChatScreen() {
       "Are you sure you want to delete this chat?",
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete", 
+        {
+          text: "Delete",
           style: "destructive",
           onPress: async () => {
             try {
@@ -71,8 +71,8 @@ export default function ChatScreen() {
     const unread = item.unread_count > 0;
 
     return (
-      <TouchableOpacity 
-        style={styles.chatItem} 
+      <TouchableOpacity
+        style={styles.chatItem}
         onPress={() => (router.push as any)(`/ChatInbox/${item.id}?other_user_id=${otherUser.id}&name=${encodeURIComponent(name)}&profile_photo=${encodeURIComponent(otherUser.profile_photo || '')}`)}
         onLongPress={() => handleDeleteConversation(item.id)}
       >
@@ -108,7 +108,8 @@ export default function ChatScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <SafeAreaView edges={['top']} style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Messages</Text>
         <TouchableOpacity onPress={() => (router.push as any)('/BlockedList/blocked')} style={styles.headerButton}>
@@ -116,10 +117,11 @@ export default function ChatScreen() {
         </TouchableOpacity>
       </View>
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#888" style={styles.searchIcon} />
+        <Ionicons name="search" size={20} color="#A0A0A0" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search chats or users..."
+          placeholderTextColor="#666666"
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
@@ -134,23 +136,23 @@ export default function ChatScreen() {
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderChatItem}
           contentContainerStyle={styles.listContent}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
           refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchConversations} />}
         />
       )}
     </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
   },
   header: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#333333',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -161,7 +163,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFC107',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -169,8 +171,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 15,
     marginTop: 10,
     marginBottom: 5,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 12,
     alignItems: 'center',
   },
   searchIcon: {
@@ -179,18 +181,31 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
+    color: '#FFFFFF',
   },
   listContent: {
     paddingBottom: 20,
+    paddingHorizontal: 15,
+    paddingTop: 10,
   },
   chatItem: {
     flexDirection: 'row',
     padding: 15,
     alignItems: 'center',
+    backgroundColor: '#1E1E1E',
+    borderRadius: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#333333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  avatarPlaceholder: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#007AFF20', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  avatarPlaceholder: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#333333', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
   avatarImage: { width: 50, height: 50, borderRadius: 25, marginRight: 15 },
-  avatarText: { fontSize: 20, fontWeight: 'bold', color: '#007AFF' },
+  avatarText: { fontSize: 20, fontWeight: 'bold', color: '#FFC107' },
   chatDetails: {
     flex: 1,
     justifyContent: 'center',
@@ -204,11 +219,11 @@ const styles = StyleSheet.create({
   chatName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#FFFFFF',
   },
   chatTime: {
     fontSize: 12,
-    color: '#888',
+    color: '#A0A0A0',
   },
   chatFooter: {
     flexDirection: 'row',
@@ -217,16 +232,16 @@ const styles = StyleSheet.create({
   },
   lastMessage: {
     fontSize: 14,
-    color: '#666',
+    color: '#A0A0A0',
     flex: 1,
     paddingRight: 10,
   },
   boldText: {
     fontWeight: 'bold',
-    color: '#000',
+    color: '#FFC107',
   },
   unreadBadge: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FFC107',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -235,14 +250,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   unreadText: {
-    color: '#fff',
+    color: '#121212',
     fontSize: 10,
     fontWeight: 'bold',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#eee',
-    marginLeft: 80,
   },
   emptyContainer: {
     flex: 1,
@@ -251,6 +261,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#888',
+    color: '#A0A0A0',
   },
 });

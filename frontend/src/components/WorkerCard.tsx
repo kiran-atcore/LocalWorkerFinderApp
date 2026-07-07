@@ -38,18 +38,18 @@ export default function WorkerCard({ worker, distance }: WorkerCardProps) {
           <Image source={{ uri: getImageUrl(worker.profile_photo) as string }} style={styles.avatar} />
         ) : (
           <View style={styles.avatarPlaceholder}>
-            <Ionicons name="person" size={24} color="#fff" />
+            <Ionicons name="person" size={24} color="#FFC107" />
           </View>
         )}
         <View style={styles.headerInfo}>
           <Text style={styles.name} numberOfLines={1}>{displayName}</Text>
           <View style={styles.ratingRow}>
-            <Ionicons name="star" size={16} color="#f1c40f" />
+            <Ionicons name="star" size={16} color="#FFC107" />
             <Text style={styles.ratingText}>{worker.rating.toFixed(1)}</Text>
             {distance !== undefined && (
               <>
                 <Text style={styles.dotSeparator}>•</Text>
-                <Ionicons name="location" size={14} color="#7f8c8d" />
+                <Ionicons name="location" size={14} color="#A0A0A0" />
                 <Text style={styles.distanceText}>{distance.toFixed(1)} km away</Text>
               </>
             )}
@@ -81,17 +81,17 @@ export default function WorkerCard({ worker, distance }: WorkerCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1E1E1E',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: '#333333',
   },
   header: {
     flexDirection: 'row',
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#ccc',
+    backgroundColor: '#333333',
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2c3e50',
+    color: '#FFFFFF',
     marginBottom: 4,
   },
   ratingRow: {
@@ -128,18 +128,18 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 14,
-    color: '#7f8c8d',
+    color: '#A0A0A0',
     marginLeft: 4,
     fontWeight: '600',
   },
   dotSeparator: {
     fontSize: 14,
-    color: '#bdc3c7',
+    color: '#666666',
     marginHorizontal: 8,
   },
   distanceText: {
     fontSize: 13,
-    color: '#7f8c8d',
+    color: '#A0A0A0',
     marginLeft: 2,
   },
   categoriesContainer: {
@@ -148,31 +148,31 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryChip: {
-    backgroundColor: '#e1f5fe',
+    backgroundColor: '#333333',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
   categoryChipText: {
-    color: '#0288d1',
+    color: '#FFC107',
     fontSize: 12,
     fontWeight: '600',
   },
   categoryChipMore: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#333333',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
   categoryChipTextMore: {
-    color: '#7f8c8d',
+    color: '#A0A0A0',
     fontSize: 12,
     fontWeight: 'bold',
     letterSpacing: 2,
   },
   noCategoryText: {
     fontSize: 12,
-    color: '#95a5a6',
+    color: '#A0A0A0',
     fontStyle: 'italic',
   },
 });

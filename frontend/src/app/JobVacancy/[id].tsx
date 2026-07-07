@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/axios';
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -57,12 +58,17 @@ export default function JobVacancyDetail() {
           )}
         </View>
       </View>
-      <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
+      <View style={styles.descriptionBox}>
+        <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
+      </View>
       <View style={styles.cardFooter}>
         <Text style={styles.remuneration}>${item.remuneration}</Text>
-        <Text style={styles.applicationsCount}>
-          {item.applications_count} Applicant{item.applications_count !== 1 ? 's' : ''}
-        </Text>
+        <View style={styles.applicationsBadge}>
+          <Ionicons name="people" size={14} color="#FFC107" style={{ marginRight: 4 }} />
+          <Text style={styles.applicationsCount}>
+            {item.applications_count} Applicant{item.applications_count !== 1 ? 's' : ''}
+          </Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -70,15 +76,16 @@ export default function JobVacancyDetail() {
   return (
     <SafeAreaView edges={['top']} style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.replace('/home')} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+        <TouchableOpacity onPress={() => router.replace('/(tabs)/home')} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#FFC107" />
         </TouchableOpacity>
         <Text style={styles.title}>My Posted Jobs</Text>
+        <View style={{ width: 24 }} />
       </View>
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#FFC107" />
         </View>
       ) : (
         <FlatList
@@ -109,34 +116,35 @@ export default function JobVacancyDetail() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
-  backButton: { marginRight: 15 },
-  backButtonText: { fontSize: 16, color: '#007AFF' },
-  title: { fontSize: 18, fontWeight: 'bold' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, backgroundColor: '#121212' },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 15, backgroundColor: '#121212', borderBottomWidth: 1, borderBottomColor: '#333333' },
+  backButton: { padding: 5 },
+  title: { flex: 1, fontSize: 18, fontWeight: 'bold', textAlign: 'center', color: '#FFC107' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
   listContainer: { padding: 15, paddingBottom: 100 },
-  card: { backgroundColor: '#fff', padding: 15, borderRadius: 12, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2 },
+  card: { backgroundColor: '#1E1E1E', padding: 15, borderRadius: 16, marginBottom: 15, borderWidth: 1, borderColor: '#333333', borderLeftWidth: 4, borderLeftColor: '#FFC107' },
   cardTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
-  jobTitle: { fontSize: 18, fontWeight: 'bold', flex: 1, marginRight: 10, color: '#333' },
+  jobTitle: { fontSize: 18, fontWeight: 'bold', flex: 1, marginRight: 10, color: '#FFFFFF' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  category: { fontSize: 18, fontWeight: 'bold', color: '#333' },
-  status: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, fontSize: 12, fontWeight: 'bold', overflow: 'hidden' },
-  statusActive: { backgroundColor: '#E3F2FD', color: '#1976D2' },
-  statusClosed: { backgroundColor: '#F5F5F5', color: '#757575' },
-  description: { fontSize: 14, color: '#666', marginBottom: 15, lineHeight: 20 },
+  category: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
+  status: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, fontSize: 10, fontWeight: 'bold', overflow: 'hidden', borderWidth: 1 },
+  statusActive: { backgroundColor: '#1E1E1E', color: '#4CAF50', borderColor: '#4CAF50' },
+  statusClosed: { backgroundColor: '#1E1E1E', color: '#C62828', borderColor: '#C62828' },
+  descriptionBox: { backgroundColor: '#121212', padding: 10, borderRadius: 8, marginBottom: 15 },
+  description: { fontSize: 14, color: '#A0A0A0', lineHeight: 20 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  remuneration: { fontSize: 16, fontWeight: 'bold', color: '#4CAF50' },
-  applicationsCount: { fontSize: 14, color: '#007AFF', fontWeight: '500' },
+  remuneration: { fontSize: 18, fontWeight: '900', color: '#FFC107' },
+  applicationsBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#333333', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  applicationsCount: { fontSize: 12, color: '#FFC107', fontWeight: 'bold' },
   emptyContainer: { alignItems: 'center', justifyContent: 'center', padding: 30 },
-  emptyText: { color: '#666', fontSize: 16 },
+  emptyText: { color: '#A0A0A0', fontSize: 16 },
   skillsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1, marginRight: 10 },
-  skillChip: { backgroundColor: '#e1f5fe', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  skillChipText: { color: '#0288d1', fontSize: 12, fontWeight: '600' },
-  skillChipMore: { backgroundColor: '#f5f5f5', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  skillChipTextMore: { color: '#7f8c8d', fontSize: 12, fontWeight: '600' },
-  noSkillsText: { color: '#95a5a6', fontSize: 13, fontStyle: 'italic' },
+  skillChip: { backgroundColor: '#333333', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
+  skillChipText: { color: '#FFC107', fontSize: 12, fontWeight: '600' },
+  skillChipMore: { backgroundColor: '#333333', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
+  skillChipTextMore: { color: '#A0A0A0', fontSize: 12, fontWeight: '600' },
+  noSkillsText: { color: '#A0A0A0', fontSize: 13, fontStyle: 'italic' },
   bottomContainer: { position: 'absolute', bottom: 20, left: 20, right: 20 },
-  postButton: { backgroundColor: '#007AFF', padding: 16, borderRadius: 12, alignItems: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
-  postButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  postButton: { backgroundColor: '#FFC107', padding: 16, borderRadius: 30, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
+  postButtonText: { color: '#121212', fontSize: 16, fontWeight: 'bold' },
 });

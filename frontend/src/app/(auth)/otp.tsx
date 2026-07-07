@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import api from '../../services/axios';
 import { useAuthStore } from '../../store/useAuthStore';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function OTPScreen() {
   const router = useRouter();
@@ -96,10 +97,11 @@ export default function OTPScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <LinearGradient colors={['#121212', '#121212']} style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           <View style={styles.headerContainer}>
@@ -117,6 +119,7 @@ export default function OTPScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="123456"
+                placeholderTextColor="#666666"
                 keyboardType="number-pad"
                 maxLength={6}
                 value={otp}
@@ -134,7 +137,7 @@ export default function OTPScreen() {
               disabled={!otp || loading || expiryTimer === 0}
             >
               {loading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color="#121212" />
               ) : (
                 <Text style={styles.verifyButtonText}>Verify</Text>
               )}
@@ -147,7 +150,7 @@ export default function OTPScreen() {
               ) : (
                 <TouchableOpacity onPress={handleResend} disabled={resendLoading}>
                   {resendLoading ? (
-                    <ActivityIndicator size="small" color="#007AFF" />
+                    <ActivityIndicator size="small" color="#FFC107" />
                   ) : (
                     <Text style={styles.resendButtonText}>Resend OTP</Text>
                   )}
@@ -157,28 +160,29 @@ export default function OTPScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#121212' },
   scrollContent: { flexGrow: 1, padding: 24, justifyContent: 'center' },
   headerContainer: { marginBottom: 32 },
-  title: { fontSize: 32, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 12 },
-  subtitle: { fontSize: 16, color: '#666', lineHeight: 24 },
-  boldEmail: { fontWeight: 'bold', color: '#1a1a1a' },
+  title: { fontSize: 32, fontWeight: 'bold', color: '#FFC107', marginBottom: 12 },
+  subtitle: { fontSize: 16, color: '#A0A0A0', lineHeight: 24 },
+  boldEmail: { fontWeight: 'bold', color: '#FFC107' },
   formContainer: { width: '100%' },
-  errorText: { color: '#FF3B30', marginBottom: 16, fontSize: 14 },
+  errorText: { color: '#FF6B6B', marginBottom: 16, fontSize: 14 },
   inputContainer: { marginBottom: 24 },
-  label: { fontSize: 14, fontWeight: '600', color: '#1a1a1a', marginBottom: 8 },
-  input: { backgroundColor: '#f5f5f5', borderRadius: 12, padding: 16, fontSize: 24, color: '#1a1a1a', borderWidth: 1, borderColor: '#e0e0e0', textAlign: 'center', letterSpacing: 8 },
-  expiryText: { fontSize: 12, color: '#FF3B30', marginTop: 8, textAlign: 'right' },
-  verifyButton: { backgroundColor: '#007AFF', borderRadius: 12, padding: 16, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+  label: { fontSize: 14, fontWeight: '600', color: '#A0A0A0', marginBottom: 8 },
+  input: { backgroundColor: '#1E1E1E', borderRadius: 20, padding: 16, fontSize: 24, color: '#FFFFFF', borderWidth: 1, borderColor: '#333333', textAlign: 'center', letterSpacing: 8 },
+  expiryText: { fontSize: 12, color: '#FF6B6B', marginTop: 8, textAlign: 'right' },
+  verifyButton: { backgroundColor: '#FFC107', borderRadius: 30, padding: 18, alignItems: 'center', justifyContent: 'center', marginTop: 8, shadowColor: '#FFC107', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 8 },
   buttonDisabled: { opacity: 0.5 },
-  verifyButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  verifyButtonText: { color: '#121212', fontSize: 17, fontWeight: '700', letterSpacing: 0.5 },
   resendContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 24 },
-  resendText: { fontSize: 14, color: '#666' },
+  resendText: { fontSize: 14, color: '#A0A0A0' },
   resendTimerText: { fontSize: 14, color: '#999', fontWeight: '500' },
-  resendButtonText: { fontSize: 14, color: '#007AFF', fontWeight: '600' }
+  resendButtonText: { fontSize: 14, color: '#FFC107', fontWeight: '700' }
 });

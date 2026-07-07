@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import api from '../../services/axios';
 import { CATEGORIES } from '../../constants/categories';
 
@@ -30,16 +30,26 @@ export default function JobRolesScreen() {
     }
   };
 
-  const getCategoryName = (categoryId: string) => {
-    const cat = CATEGORIES.find(c => c.id === categoryId);
-    return cat ? cat.name : categoryId;
+  const getCategoryInfo = (categoryId: string) => {
+    return CATEGORIES.find(c => c.id === categoryId);
+  };
+
+  const renderIcon = (categoryInfo: any) => {
+    if (!categoryInfo) return <Ionicons name="briefcase" size={24} color="#FFC107" />;
+    
+    if (categoryInfo.iconFamily === 'MaterialIcons') {
+      return <MaterialIcons name={categoryInfo.iconName as any} size={24} color={categoryInfo.color} />;
+    } else if (categoryInfo.iconFamily === 'FontAwesome5') {
+      return <FontAwesome5 name={categoryInfo.iconName as any} size={24} color={categoryInfo.color} />;
+    }
+    return <Ionicons name={categoryInfo.iconName as any} size={24} color={categoryInfo.color} />;
   };
 
   const handleDelete = (roleId: string) => {
     Alert.alert('Delete Role', 'Are you sure you want to delete this job role?', [
       { text: 'Cancel', style: 'cancel' },
-      { 
-        text: 'Delete', 
+      {
+        text: 'Delete',
         style: 'destructive',
         onPress: async () => {
           try {
@@ -53,28 +63,36 @@ export default function JobRolesScreen() {
     ]);
   };
 
-  const renderRole = ({ item }: { item: any }) => (
-    <Pressable style={styles.card} onPress={() => (router.push as any)(`/JobRoleView/${item.id}`)}>
-      <View style={styles.cardContent}>
-        <Text style={styles.roleTitle}>{getCategoryName(item.category)}</Text>
-        <Text style={styles.roleDetail}>${item.hourly_rate}/hr • {item.experience_years} yrs exp</Text>
-      </View>
-      <View style={styles.actionIcons}>
-        <Pressable onPress={() => (router.push as any)(`/JobRoleForm/${item.id}`)} style={styles.iconButton}>
-          <Ionicons name="pencil" size={20} color="#007aff" />
-        </Pressable>
-        <Pressable onPress={() => handleDelete(item.id)} style={styles.iconButton}>
-          <Ionicons name="trash" size={20} color="#ff3b30" />
-        </Pressable>
-      </View>
-    </Pressable>
-  );
+  const renderRole = ({ item }: { item: any }) => {
+    const categoryInfo = getCategoryInfo(item.category);
+    const categoryName = categoryInfo ? categoryInfo.name : item.category;
+
+    return (
+      <Pressable style={styles.card} onPress={() => (router.push as any)(`/JobRoleView/${item.id}`)}>
+        <View style={[styles.iconContainer, { backgroundColor: '#333333' }]}>
+          {renderIcon(categoryInfo)}
+        </View>
+        <View style={styles.cardContent}>
+          <Text style={styles.roleTitle}>{categoryName}</Text>
+          <Text style={styles.roleDetail}>${item.hourly_rate}/hr • {item.experience_years} yrs exp</Text>
+        </View>
+        <View style={styles.actionIcons}>
+          <Pressable onPress={() => (router.push as any)(`/JobRoleForm/${item.id}`)} style={styles.iconButton}>
+            <Ionicons name="pencil" size={20} color="#FFC107" />
+          </Pressable>
+          <Pressable onPress={() => handleDelete(item.id)} style={styles.iconButton}>
+            <Ionicons name="trash" size={20} color="#FF6B6B" />
+          </Pressable>
+        </View>
+      </Pressable>
+    );
+  };
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: '#121212' }}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#FFC107" />
         </Pressable>
         <Text style={styles.title}>My Job Roles</Text>
         <View style={{ width: 24 }} />
@@ -82,7 +100,7 @@ export default function JobRolesScreen() {
 
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#007aff" />
+          <ActivityIndicator size="large" color="#FFC107" />
         </View>
       ) : (
         <FlatList
@@ -96,7 +114,7 @@ export default function JobRolesScreen() {
 
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 15) }]}>
         <Pressable style={styles.addButton} onPress={() => (router.push as any)('/JobRoleForm/new')}>
-          <Ionicons name="add" size={24} color="#fff" />
+          <Ionicons name="add" size={24} color="#121212" />
           <Text style={styles.addButtonText}>Add Job Role</Text>
         </Pressable>
       </View>
@@ -109,47 +127,55 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee'
+    borderBottomColor: '#333333'
   },
   backButton: { padding: 5 },
-  title: { flex: 1, fontSize: 18, fontWeight: 'bold', textAlign: 'center' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  title: { flex: 1, fontSize: 18, fontWeight: 'bold', textAlign: 'center', color: '#FFC107' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
   listContent: { padding: 15, paddingBottom: 120 },
   card: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: '#1E1E1E',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 16,
     marginBottom: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#eee'
+    borderColor: '#333333'
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   cardContent: { flex: 1 },
-  roleTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 5 },
-  roleDetail: { fontSize: 14, color: '#666' },
+  roleTitle: { fontSize: 16, fontWeight: 'bold', color: '#FFC107', marginBottom: 5 },
+  roleDetail: { fontSize: 14, color: '#A0A0A0' },
   actionIcons: { flexDirection: 'row', alignItems: 'center' },
   iconButton: { padding: 8, marginLeft: 5 },
-  emptyText: { textAlign: 'center', marginTop: 50, color: '#888', fontSize: 16, lineHeight: 24, paddingHorizontal: 20 },
+  emptyText: { textAlign: 'center', marginTop: 50, color: '#A0A0A0', fontSize: 16, lineHeight: 24, paddingHorizontal: 20 },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     padding: 15,
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
     borderTopWidth: 1,
-    borderTopColor: '#eee'
+    borderTopColor: '#333333'
   },
   addButton: {
-    backgroundColor: '#007aff',
+    backgroundColor: '#FFC107',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 15,
-    borderRadius: 8
+    borderRadius: 30
   },
-  addButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginLeft: 8 }
+  addButtonText: { color: '#121212', fontSize: 16, fontWeight: 'bold', marginLeft: 8 }
 });

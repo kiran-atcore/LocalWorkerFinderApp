@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -75,17 +75,20 @@ export default function JobRoleFormScreen() {
 
   if (isLoading) {
     return (
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" color="#007aff" />
+        <ActivityIndicator size="large" color="#FFC107" />
       </SafeAreaView>
-    );
+    </KeyboardAvoidingView>
+  );
   }
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: '#121212' }}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#FFC107" />
         </Pressable>
         <Text style={styles.title}>{isNew ? 'Add Job Role' : 'Edit Job Role'}</Text>
         <View style={{ width: 24 }} />
@@ -113,6 +116,7 @@ export default function JobRoleFormScreen() {
           style={styles.input}
           keyboardType="numeric"
           placeholder="e.g. 25.00"
+          placeholderTextColor="#666666"
           value={hourlyRate}
           onChangeText={setHourlyRate}
         />
@@ -122,6 +126,7 @@ export default function JobRoleFormScreen() {
           style={styles.input}
           keyboardType="numeric"
           placeholder="e.g. 5"
+          placeholderTextColor="#666666"
           value={experience}
           onChangeText={setExperience}
         />
@@ -130,72 +135,75 @@ export default function JobRoleFormScreen() {
         <TextInput
           style={[styles.input, styles.textArea]}
           placeholder="Describe your expertise, certifications, and what you offer..."
+          placeholderTextColor="#666666"
           multiline
           numberOfLines={4}
           value={description}
           onChangeText={setDescription}
         />
 
-        <Pressable 
-          style={[styles.saveButton, isSaving && styles.disabledButton]} 
+        <Pressable
+          style={[styles.saveButton, isSaving && styles.disabledButton]}
           onPress={handleSave}
           disabled={isSaving}
         >
-          {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Save Role</Text>}
+          {isSaving ? <ActivityIndicator color="#121212" /> : <Text style={styles.saveButtonText}>Save Role</Text>}
         </Pressable>
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee'
+    borderBottomColor: '#333333'
   },
   backButton: { padding: 5 },
-  title: { flex: 1, fontSize: 18, fontWeight: 'bold', textAlign: 'center' },
+  title: { flex: 1, fontSize: 18, fontWeight: 'bold', textAlign: 'center', color: '#FFC107' },
   container: { padding: 20 },
-  label: { fontSize: 16, fontWeight: '600', marginBottom: 10, color: '#333' },
+  label: { fontSize: 16, fontWeight: '600', marginBottom: 10, color: '#FFC107' },
   categoryScroll: { marginBottom: 20 },
   categoryPill: {
     paddingHorizontal: 15,
     paddingVertical: 10,
-    backgroundColor: '#fff',
+    backgroundColor: '#1E1E1E',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#333333',
     borderRadius: 20,
     marginRight: 10,
   },
   categoryPillActive: {
-    backgroundColor: '#007aff',
-    borderColor: '#007aff',
+    backgroundColor: '#FFC107',
+    borderColor: '#FFC107',
   },
-  categoryPillText: { color: '#666', fontWeight: '500' },
-  categoryPillTextActive: { color: '#fff' },
+  categoryPillText: { color: '#A0A0A0', fontWeight: '500' },
+  categoryPillTextActive: { color: '#121212' },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1E1E1E',
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderColor: '#333333',
+    borderRadius: 16,
     padding: 15,
     fontSize: 16,
     marginBottom: 20,
+    color: '#FFFFFF'
   },
   textArea: { height: 100, textAlignVertical: 'top' },
   saveButton: {
-    backgroundColor: '#007aff',
+    backgroundColor: '#FFC107',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 30,
     alignItems: 'center',
     marginTop: 10,
   },
-  saveButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  saveButtonText: { color: '#121212', fontSize: 18, fontWeight: 'bold' },
   disabledButton: { opacity: 0.7 },
 });

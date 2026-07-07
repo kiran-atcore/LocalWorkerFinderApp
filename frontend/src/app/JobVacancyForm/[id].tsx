@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/axios';
 import { useAuthStore } from '../../store/useAuthStore';
 import LocationBanner from '../../Components/LocationBanner';
@@ -97,8 +98,8 @@ export default function JobVacancyFormDetail() {
 
     if (initialLoading) {
         return (
-            <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color="#007AFF" />
+            <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' }}>
+                <ActivityIndicator size="large" color="#FFC107" />
             </SafeAreaView>
         );
     }
@@ -108,9 +109,10 @@ export default function JobVacancyFormDetail() {
             <SafeAreaView edges={['top']} style={{ flex: 1 }}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Text style={styles.backButtonText}>← Back</Text>
+                        <Ionicons name="arrow-back" size={24} color="#FFC107" />
                     </TouchableOpacity>
                     <Text style={styles.title}>{isEditing ? 'Edit Job Vacancy' : 'Post a Job Vacancy'}</Text>
+                    <View style={{ width: 24 }} />
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -121,6 +123,7 @@ export default function JobVacancyFormDetail() {
                         <TextInput
                             style={styles.input}
                             placeholder="e.g. Need a reliable plumber"
+                            placeholderTextColor="#666666"
                             value={title}
                             onChangeText={setTitle}
                         />
@@ -129,6 +132,7 @@ export default function JobVacancyFormDetail() {
                         <TextInput
                             style={styles.input}
                             placeholder="e.g. you@example.com"
+                            placeholderTextColor="#666666"
                             keyboardType="email-address"
                             autoCapitalize="none"
                             value={contactEmail}
@@ -163,6 +167,7 @@ export default function JobVacancyFormDetail() {
                         <TextInput
                             style={styles.input}
                             placeholder="e.g. 2-5 years"
+                            placeholderTextColor="#666666"
                             value={experience}
                             onChangeText={setExperience}
                         />
@@ -171,6 +176,7 @@ export default function JobVacancyFormDetail() {
                         <TextInput
                             style={styles.input}
                             placeholder="e.g. 150.00"
+                            placeholderTextColor="#666666"
                             keyboardType="decimal-pad"
                             value={remuneration}
                             onChangeText={setRemuneration}
@@ -180,6 +186,7 @@ export default function JobVacancyFormDetail() {
                         <TextInput
                             style={[styles.input, styles.textArea]}
                             placeholder="Describe the job in detail..."
+                            placeholderTextColor="#666666"
                             multiline
                             numberOfLines={4}
                             value={description}
@@ -194,7 +201,7 @@ export default function JobVacancyFormDetail() {
                         onPress={handleSubmit}
                         disabled={loading}
                     >
-                        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>{isEditing ? 'Save Changes' : 'Post Job'}</Text>}
+                        {loading ? <ActivityIndicator color="#121212" /> : <Text style={styles.submitButtonText}>{isEditing ? 'Save Changes' : 'Post Job'}</Text>}
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
@@ -203,28 +210,27 @@ export default function JobVacancyFormDetail() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    header: { flexDirection: 'row', alignItems: 'center', padding: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
-    backButton: { marginRight: 15 },
-    backButtonText: { fontSize: 16, color: '#007AFF' },
-    title: { fontSize: 18, fontWeight: 'bold' },
+    container: { flex: 1, backgroundColor: '#121212' },
+    header: { flexDirection: 'row', alignItems: 'center', padding: 15, backgroundColor: '#121212', borderBottomWidth: 1, borderBottomColor: '#333333' },
+    backButton: { padding: 5 },
+    title: { flex: 1, fontSize: 18, fontWeight: 'bold', textAlign: 'center', color: '#FFC107' },
     scrollContent: { paddingBottom: 40 },
-    formSection: { padding: 20 },
-    label: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 8, marginTop: 15 },
-    input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 16 },
+    formSection: { padding: 20, backgroundColor: '#1E1E1E', margin: 15, borderRadius: 16, borderWidth: 1, borderColor: '#333333' },
+    label: { fontSize: 14, fontWeight: '600', color: '#FFC107', marginBottom: 8, marginTop: 15 },
+    input: { backgroundColor: '#121212', borderWidth: 1, borderColor: '#333333', borderRadius: 16, padding: 12, fontSize: 16, color: '#FFFFFF' },
     textArea: { height: 100, textAlignVertical: 'top' },
     categoryScroll: { flexDirection: 'row', marginBottom: 10 },
-    categoryChip: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', marginRight: 10 },
-    categoryChipSelected: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
-    categoryText: { color: '#666', fontWeight: '500' },
-    categoryTextSelected: { color: '#fff' },
+    categoryChip: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20, backgroundColor: '#121212', borderWidth: 1, borderColor: '#333333', marginRight: 10 },
+    categoryChipSelected: { backgroundColor: '#FFC107', borderColor: '#FFC107' },
+    categoryText: { color: '#A0A0A0', fontWeight: '500' },
+    categoryTextSelected: { color: '#121212' },
     skillsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 10 },
-    skillChipItem: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f0f0f0', borderWidth: 1, borderColor: '#ddd' },
-    skillChipItemSelected: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
-    skillChipText: { color: '#666', fontSize: 13, fontWeight: '500' },
-    skillChipTextSelected: { color: '#fff' },
-    footer: { padding: 20, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#eee' },
-    submitButton: { backgroundColor: '#007AFF', padding: 16, borderRadius: 12, alignItems: 'center' },
+    skillChipItem: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: '#121212', borderWidth: 1, borderColor: '#333333' },
+    skillChipItemSelected: { backgroundColor: '#FFC107', borderColor: '#FFC107' },
+    skillChipText: { color: '#A0A0A0', fontSize: 13, fontWeight: '500' },
+    skillChipTextSelected: { color: '#121212', fontWeight: 'bold' },
+    footer: { padding: 20, backgroundColor: '#121212', borderTopWidth: 1, borderTopColor: '#333333' },
+    submitButton: { backgroundColor: '#FFC107', padding: 16, borderRadius: 30, alignItems: 'center' },
     submitButtonDisabled: { opacity: 0.6 },
-    submitButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+    submitButtonText: { color: '#121212', fontSize: 18, fontWeight: 'bold' },
 });

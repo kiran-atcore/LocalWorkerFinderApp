@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, ActivityIndicator, Switch, TouchableOpacity, Alert, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, ActivityIndicator, Switch, TouchableOpacity, Alert, Dimensions, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import Slider from '@react-native-community/slider';
@@ -112,7 +112,7 @@ function CustomerHomeScreen() {
       const rating = parseFloat(w.rating) || 0;
       if (rating < minRating) return false;
     }
-    
+
     if (!isRadiusEnabled) return true;
     if (w.distance === undefined) return false;
     return w.distance <= radius;
@@ -152,6 +152,7 @@ function CustomerHomeScreen() {
           <TextInput
             style={styles.searchInput}
             placeholder="Search services or workers..."
+            placeholderTextColor="#666666"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -163,11 +164,12 @@ function CustomerHomeScreen() {
               <Switch
                 value={isRadiusEnabled}
                 onValueChange={setIsRadiusEnabled}
-                trackColor={{ false: '#ddd', true: '#007aff' }}
+                trackColor={{ false: '#333333', true: '#FFC107' }}
+                thumbColor="#ffffff"
                 style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
               />
             </View>
-            <Text style={[styles.sliderValue, !isRadiusEnabled && { color: '#aaa' }]}>{radius} km</Text>
+            <Text style={[styles.sliderValue, !isRadiusEnabled && { color: '#666666' }]}>{radius} km</Text>
           </View>
           <Slider
             style={{ width: '100%', height: 40 }}
@@ -177,9 +179,9 @@ function CustomerHomeScreen() {
             value={radius}
             onValueChange={setRadius}
             disabled={!isRadiusEnabled}
-            minimumTrackTintColor={isRadiusEnabled ? "#007aff" : "#ddd"}
-            maximumTrackTintColor="#ddd"
-            thumbTintColor={isRadiusEnabled ? "#007aff" : "#bbb"}
+            minimumTrackTintColor={isRadiusEnabled ? "#FFC107" : "#333333"}
+            maximumTrackTintColor="#333333"
+            thumbTintColor={isRadiusEnabled ? "#FFC107" : "#666666"}
           />
         </View>
 
@@ -188,13 +190,13 @@ function CustomerHomeScreen() {
             style={styles.mapButton}
             onPress={() => (router.push as any)('/RadarMap/workers')}
           >
-            <Ionicons name="map-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+            <Ionicons name="map-outline" size={20} color="#FFC107" style={{ marginRight: 8 }} />
             <Text style={styles.mapButtonText}>View Workers Nearby on Map</Text>
           </TouchableOpacity>
         </View>
 
         {isLoading || isLocationLoading || (!searchLocation && isRadiusEnabled) ? (
-          <ActivityIndicator size="large" color="#007aff" style={{ marginTop: 20 }} />
+          <ActivityIndicator size="large" color="#FFC107" style={{ marginTop: 20 }} />
         ) : filteredWorkers.length > 0 ? (
           filteredWorkers.map(worker => (
             <WorkerCard key={worker.id} worker={worker} distance={worker.distance} />
@@ -340,7 +342,7 @@ function WorkerHomeScreen() {
 
   const filteredVacancies = vacanciesWithDistance.filter(v => {
     if (v.has_applied) return false;
-    
+
     // Apply rate filters
     const rate = parseFloat(v.remuneration) || 0;
     if (maxRate !== null && rate > maxRate) return false;
@@ -378,9 +380,9 @@ function WorkerHomeScreen() {
       <View style={styles.appliedSection}>
         <Text style={[styles.sectionTitle, { paddingHorizontal: 15 }]}>Applied Jobs</Text>
         {appliedJobs.length > 0 ? (
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.appliedScroll}
             snapToInterval={Dimensions.get('window').width - 15}
             decelerationRate="fast"
@@ -388,11 +390,12 @@ function WorkerHomeScreen() {
             {appliedJobs.map(app => (
               <TouchableOpacity
                 key={app.id}
-                style={styles.appliedCard}
+                style={[styles.appliedCard, { borderLeftWidth: 4, borderLeftColor: app.status === 'ACCEPTED' ? '#4CAF50' : app.status === 'REJECTED' ? '#F44336' : '#FFC107' }]}
                 onPress={() => router.push(`/JobVacancyView/${app.vacancy}`)}
               >
                 <View style={styles.appliedCardHeader}>
                   <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, marginRight: 8 }}>
+                    <Ionicons name="briefcase-outline" size={16} color="#A0A0A0" />
                     <Text style={[styles.appliedJobTitle, { flexShrink: 1 }]} numberOfLines={1}>{app.vacancy_details?.title || 'Unknown Job'}</Text>
                     {app.vacancy_details?.is_active === false && (
                       <Text style={{ fontSize: 10, color: '#C62828', fontWeight: 'bold', backgroundColor: '#FFEBEE', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>CLOSED</Text>
@@ -400,10 +403,11 @@ function WorkerHomeScreen() {
                   </View>
                   <Text style={[styles.appliedStatusBadge, styles[`status${app.status}` as keyof typeof styles]]}>{app.status}</Text>
                 </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 10 }}>
                   <View style={{ flex: 1 }}>
+                    <Text style={styles.appliedJobRemuneration}>${app.vacancy_details?.remuneration}</Text>
                     {app.vacancy_details?.skills_required?.length > 0 && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 4 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 }}>
                         {app.vacancy_details.skills_required.slice(0, 3).map((skill: string, index: number) => (
                           <View key={index} style={styles.appliedSkillBadge}>
                             <Text style={styles.appliedSkillText} numberOfLines={1}>{skill}</Text>
@@ -411,15 +415,14 @@ function WorkerHomeScreen() {
                         ))}
                         {app.vacancy_details.skills_required.length > 3 && (
                           <View style={styles.appliedSkillBadge}>
-                            <Text style={styles.appliedSkillText}>...</Text>
+                            <Text style={styles.appliedSkillText}>+{app.vacancy_details.skills_required.length - 3}</Text>
                           </View>
                         )}
                       </View>
                     )}
-                    <Text style={[styles.appliedJobRemuneration, { marginTop: 6 }]}>${app.vacancy_details?.remuneration}</Text>
                   </View>
                   <TouchableOpacity onPress={() => handleCancelApplication(app.id)} style={styles.appliedTrashBtn}>
-                    <Ionicons name="trash-outline" size={20} color="#D32F2F" />
+                    <Ionicons name="close-outline" size={20} color="#D32F2F" />
                   </TouchableOpacity>
                 </View>
               </TouchableOpacity>
@@ -438,6 +441,7 @@ function WorkerHomeScreen() {
           <TextInput
             style={styles.searchInput}
             placeholder="Search job categories or description..."
+            placeholderTextColor="#666666"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -449,11 +453,12 @@ function WorkerHomeScreen() {
               <Switch
                 value={isRadiusEnabled}
                 onValueChange={setIsRadiusEnabled}
-                trackColor={{ false: '#ddd', true: '#007aff' }}
+                trackColor={{ false: '#333333', true: '#FFC107' }}
+                thumbColor="#ffffff"
                 style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
               />
             </View>
-            <Text style={[styles.sliderValue, !isRadiusEnabled && { color: '#aaa' }]}>{radius} km</Text>
+            <Text style={[styles.sliderValue, !isRadiusEnabled && { color: '#666666' }]}>{radius} km</Text>
           </View>
           <Slider
             style={{ width: '100%', height: 40 }}
@@ -463,9 +468,9 @@ function WorkerHomeScreen() {
             value={radius}
             onValueChange={setRadius}
             disabled={!isRadiusEnabled}
-            minimumTrackTintColor={isRadiusEnabled ? "#007aff" : "#ddd"}
-            maximumTrackTintColor="#ddd"
-            thumbTintColor={isRadiusEnabled ? "#007aff" : "#bbb"}
+            minimumTrackTintColor={isRadiusEnabled ? "#FFC107" : "#333333"}
+            maximumTrackTintColor="#333333"
+            thumbTintColor={isRadiusEnabled ? "#FFC107" : "#666666"}
           />
         </View>
 
@@ -474,7 +479,7 @@ function WorkerHomeScreen() {
             style={styles.mapButton}
             onPress={() => (router.push as any)('/RadarMap/jobs')}
           >
-            <Ionicons name="map-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+            <Ionicons name="map-outline" size={20} color="#FFC107" style={{ marginRight: 8 }} />
             <Text style={styles.mapButtonText}>View Jobs Nearby on Map</Text>
           </TouchableOpacity>
         </View>
@@ -496,26 +501,35 @@ function WorkerHomeScreen() {
         </View>
 
         {isLoading || isLocationLoading || (!searchLocation && isRadiusEnabled) ? (
-          <ActivityIndicator size="large" color="#007aff" style={{ marginTop: 20 }} />
+          <ActivityIndicator size="large" color="#FFC107" style={{ marginTop: 20 }} />
         ) : filteredVacancies.length > 0 ? (
           filteredVacancies.map(v => (
             <TouchableOpacity
               key={v.id}
-              style={styles.workerCard}
+              style={[styles.workerCard, { borderLeftWidth: 4, borderLeftColor: '#333333' }]}
               onPress={() => router.push(`/JobVacancyView/${v.id}`)}
             >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5, alignItems: 'center' }}>
-                <View style={{ flexDirection: 'row', flex: 1, alignItems: 'center', marginRight: 10 }}>
-                  <Text style={{ fontSize: 18, fontWeight: 'bold', flexShrink: 1 }} numberOfLines={1}>{v.title}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, alignItems: 'flex-start' }}>
+                <View style={{ flex: 1, marginRight: 10 }}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 4 }} numberOfLines={2}>{v.title}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="location-outline" size={14} color="#A0A0A0" style={{ marginRight: 4 }} />
+                    <Text style={{ fontSize: 13, color: '#A0A0A0' }}>
+                      {v.distance !== undefined ? `${v.distance.toFixed(1)} km away` : 'Location unknown'}
+                    </Text>
+                  </View>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={{ fontSize: 18, fontWeight: '900', color: '#FFC107' }}>${v.remuneration}</Text>
                   {v.has_applied && (
-                    <View style={styles.appliedBadge}>
+                    <View style={[styles.appliedBadge, { marginTop: 4, marginLeft: 0 }]}>
                       <Text style={styles.appliedBadgeText}>Applied</Text>
                     </View>
                   )}
                 </View>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#4CAF50' }}>${v.remuneration}</Text>
               </View>
-              <View style={styles.skillsContainer}>
+              
+              <View style={[styles.skillsContainer, { marginBottom: 12 }]}>
                 {v.skills_required?.slice(0, 3).map((skill: string, index: number) => (
                   <View key={index} style={styles.skillChip}>
                     <Text style={styles.skillChipText}>{skill}</Text>
@@ -530,19 +544,24 @@ function WorkerHomeScreen() {
                   <Text style={styles.noSkillsText}>General</Text>
                 )}
               </View>
-              <Text style={{ fontSize: 14, color: '#666', marginBottom: 10 }} numberOfLines={2}>{v.description}</Text>
+              
+              <View style={{ backgroundColor: '#121212', padding: 10, borderRadius: 8, marginBottom: 12 }}>
+                <Text style={{ fontSize: 14, color: '#A0A0A0', lineHeight: 20 }} numberOfLines={2}>{v.description}</Text>
+              </View>
+
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 13, color: '#888' }}>
-                  {v.distance !== undefined ? `${v.distance.toFixed(1)} km away` : 'Location unknown'}
-                </Text>
-                {(() => {
-                  const isEdited = v.updated_at && v.created_at && (new Date(v.updated_at).getTime() - new Date(v.created_at).getTime() > 60000);
-                  return (
-                    <Text style={{ fontSize: 12, color: '#aaa' }}>
-                      {isEdited ? `Edited ${formatTimeAgo(v.updated_at)}` : `Posted ${formatTimeAgo(v.created_at)}`}
-                    </Text>
-                  );
-                })()}
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="time-outline" size={14} color="#666666" style={{ marginRight: 4 }} />
+                  {(() => {
+                    const isEdited = v.updated_at && v.created_at && (new Date(v.updated_at).getTime() - new Date(v.created_at).getTime() > 60000);
+                    return (
+                      <Text style={{ fontSize: 12, color: '#666666' }}>
+                        {isEdited ? `Edited ${formatTimeAgo(v.updated_at)}` : `Posted ${formatTimeAgo(v.created_at)}`}
+                      </Text>
+                    );
+                  })()}
+                </View>
+                <Ionicons name="chevron-forward" size={16} color="#333333" />
               </View>
             </TouchableOpacity>
           ))
@@ -567,63 +586,65 @@ function WorkerHomeScreen() {
 export default function HomeScreen() {
   const activeRole = useAuthStore((state) => state.activeRole);
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#121212' }}>
       {activeRole === 'worker' ? <WorkerHomeScreen /> : <CustomerHomeScreen />}
     </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  banner: { padding: 20, backgroundColor: '#007AFF', alignItems: 'center' },
-  bannerText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  container: { flex: 1, backgroundColor: '#121212' },
+  banner: { padding: 20, backgroundColor: '#FFC107', alignItems: 'center' },
+  bannerText: { color: '#121212', fontSize: 16, fontWeight: 'bold' },
   searchContainer: { marginBottom: 15 },
-  searchInput: { padding: 15, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#ddd', fontSize: 16 },
+  searchInput: { padding: 15, backgroundColor: '#1E1E1E', borderRadius: 16, borderWidth: 1, borderColor: '#333333', fontSize: 16, color: '#FFFFFF' },
   sliderContainer: { marginBottom: 20, paddingHorizontal: 5 },
   sliderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 },
   sliderLabelContainer: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  sliderLabel: { fontSize: 14, fontWeight: '600', color: '#555' },
-  sliderValue: { fontSize: 14, fontWeight: 'bold', color: '#007aff' },
+  sliderLabel: { fontSize: 14, fontWeight: '600', color: '#A0A0A0' },
+  sliderValue: { fontSize: 14, fontWeight: 'bold', color: '#FFC107' },
   categories: { padding: 15 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#FFC107' },
   categoryScroll: { paddingVertical: 10, paddingHorizontal: 5 },
   postJobContainer: { paddingHorizontal: 15, paddingBottom: 10 },
-  postJobButton: { backgroundColor: '#007AFF', padding: 15, borderRadius: 12, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
-  postJobButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  postJobButton: { backgroundColor: '#FFC107', padding: 18, borderRadius: 30, alignItems: 'center', shadowColor: '#FFC107', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
+  postJobButtonText: { color: '#121212', fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
   featured: { padding: 15 },
-  workerCard: { padding: 15, backgroundColor: '#fff', borderRadius: 8, marginBottom: 10, borderWidth: 1, borderColor: '#ddd' },
+  workerCard: { padding: 15, backgroundColor: '#1E1E1E', borderRadius: 16, marginBottom: 15, borderWidth: 1, borderColor: '#333333', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 2 },
   fallbackContainer: { padding: 20, alignItems: 'center', justifyContent: 'center' },
-  fallbackText: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 20 },
+  fallbackText: { fontSize: 16, color: '#A0A0A0', textAlign: 'center', marginBottom: 20 },
   fallbackImage: { width: 120, height: 120, resizeMode: 'contain', opacity: 0.5 },
   skillsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-  skillChip: { backgroundColor: '#e1f5fe', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  skillChipText: { color: '#0288d1', fontSize: 12, fontWeight: '600' },
-  skillChipMore: { backgroundColor: '#f5f5f5', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  skillChipTextMore: { color: '#7f8c8d', fontSize: 12, fontWeight: '600' },
-  noSkillsText: { color: '#95a5a6', fontSize: 13, fontStyle: 'italic', marginBottom: 10 },
+  skillChip: { backgroundColor: '#333333', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
+  skillChipText: { color: '#FFC107', fontSize: 12, fontWeight: '600' },
+  skillChipMore: { backgroundColor: '#333333', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
+  skillChipTextMore: { color: '#A0A0A0', fontSize: 12, fontWeight: '600' },
+  noSkillsText: { color: '#A0A0A0', fontSize: 13, fontStyle: 'italic', marginBottom: 10 },
   sortContainer: { marginBottom: 15 },
   sortScroll: { gap: 10, paddingHorizontal: 5 },
-  sortChipOption: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f0f0f0', borderWidth: 1, borderColor: '#e0e0e0' },
-  sortChipOptionActive: { backgroundColor: '#007aff', borderColor: '#007aff' },
-  sortChipOptionText: { fontSize: 14, color: '#666', fontWeight: '600' },
-  sortChipOptionTextActive: { color: '#fff' },
-  appliedBadge: { backgroundColor: '#E8F5E9', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, marginLeft: 8 },
-  appliedBadgeText: { color: '#2E7D32', fontSize: 11, fontWeight: 'bold' },
-  appliedSection: { paddingVertical: 15, backgroundColor: '#f9f9f9', borderBottomWidth: 1, borderBottomColor: '#eee', marginBottom: 10 },
+  sortChipOption: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#1E1E1E', borderWidth: 1, borderColor: '#333333' },
+  sortChipOptionActive: { backgroundColor: '#FFC107', borderColor: '#FFC107' },
+  sortChipOptionText: { fontSize: 14, color: '#A0A0A0', fontWeight: '600' },
+  sortChipOptionTextActive: { color: '#121212' },
+  appliedBadge: { backgroundColor: '#333333', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, marginLeft: 8 },
+  appliedBadgeText: { color: '#FFC107', fontSize: 11, fontWeight: 'bold' },
+  appliedSection: { paddingVertical: 15, backgroundColor: '#1E1E1E', borderBottomWidth: 1, borderBottomColor: '#333333', marginBottom: 10 },
   appliedScroll: { paddingHorizontal: 15, gap: 15 },
-  appliedCard: { width: Dimensions.get('window').width - 30, backgroundColor: '#fff', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: '#eee', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2 },
+  appliedCard: { width: Dimensions.get('window').width - 30, backgroundColor: '#1E1E1E', padding: 15, borderRadius: 16, borderWidth: 1, borderColor: '#333333', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 2 },
   appliedCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  appliedJobTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', flex: 1, marginRight: 10 },
-  appliedStatusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, fontSize: 10, fontWeight: 'bold', overflow: 'hidden' },
-  statusPENDING: { backgroundColor: '#FFF3E0', color: '#F57C00' },
-  statusACCEPTED: { backgroundColor: '#E8F5E9', color: '#2E7D32' },
-  statusREJECTED: { backgroundColor: '#FFEBEE', color: '#C62828' },
-  appliedJobRemuneration: { fontSize: 15, fontWeight: '600', color: '#4CAF50', marginBottom: 4 },
-  appliedJobCategory: { fontSize: 13, color: '#666' },
-  appliedTrashBtn: { padding: 8, backgroundColor: '#FFEBEE', borderRadius: 20 },
-  appliedSkillBadge: { backgroundColor: '#F0F0F0', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  appliedSkillText: { fontSize: 11, color: '#555', fontWeight: '500' },
+  appliedJobTitle: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF', flex: 1, marginRight: 10 },
+  appliedStatusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, fontSize: 10, fontWeight: 'bold', overflow: 'hidden', borderWidth: 1 },
+  statusPENDING: { backgroundColor: '#1E1E1E', color: '#FFC107', borderColor: '#333333' },
+  statusACCEPTED: { backgroundColor: '#1E1E1E', color: '#4CAF50', borderColor: '#4CAF50' },
+  statusREJECTED: { backgroundColor: '#1E1E1E', color: '#F44336', borderColor: '#F44336' },
+  appliedJobRemuneration: { fontSize: 18, fontWeight: '900', color: '#FFC107', marginBottom: 4 },
+  appliedJobCategory: { fontSize: 13, color: '#A0A0A0' },
+  appliedTrashBtn: { padding: 4, backgroundColor: '#2A1010', borderRadius: 20, borderWidth: 1, borderColor: '#5C1C1C' },
+  appliedSkillBadge: { backgroundColor: '#333333', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  appliedSkillText: { fontSize: 11, color: '#A0A0A0', fontWeight: '500' },
   mapButtonContainer: { paddingHorizontal: 15, marginBottom: 15 },
-  mapButton: { backgroundColor: '#4CAF50', padding: 12, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
-  mapButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  mapButton: { backgroundColor: '#1E1E1E', padding: 15, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#333333', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  mapButtonText: { color: '#FFC107', fontSize: 16, fontWeight: 'bold' },
 });

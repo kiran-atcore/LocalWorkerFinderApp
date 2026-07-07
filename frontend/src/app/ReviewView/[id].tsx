@@ -6,6 +6,14 @@ import api from '../../services/axios';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/useAuthStore';
 
+const StarRating = ({ rating }: { rating: number }) => (
+  <View style={{ flexDirection: 'row', gap: 2 }}>
+    {[1, 2, 3, 4, 5].map(i => (
+      <Ionicons key={i} name={i <= rating ? 'star' : 'star-outline'} size={16} color="#FFC107" />
+    ))}
+  </View>
+);
+
 export default function ReviewView() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -54,7 +62,7 @@ export default function ReviewView() {
     ]);
   };
 
-  if (isLoading) return <View style={styles.center}><ActivityIndicator size="large" color="#007aff" /></View>;
+  if (isLoading) return <View style={styles.center}><ActivityIndicator size="large" color="#FFC107" /></View>;
   if (!review) return null;
 
   const isOwner = user && review.customer?.user?.id === user.id;
@@ -63,9 +71,10 @@ export default function ReviewView() {
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#FFC107" />
         </Pressable>
         <Text style={styles.title}>Review Details</Text>
+        <View style={{ width: 24 }} />
       </View>
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: Math.max(insets.bottom, 20) }]}>
@@ -82,15 +91,17 @@ export default function ReviewView() {
           </Text>
           
           <View style={styles.overallRating}>
-            <Text style={styles.overallText}>Overall: ⭐ {review.overall_rating.toFixed(1)}</Text>
+            <Ionicons name="star" size={40} color="#121212" style={{ marginBottom: 5 }} />
+            <Text style={styles.overallText}>{review.overall_rating.toFixed(1)}</Text>
+            <Text style={styles.overallLabel}>Out of 5</Text>
           </View>
 
           <View style={styles.statsList}>
-            <View style={styles.statRow}><Text style={styles.statLabel}>Skill</Text><Text style={styles.statValue}>⭐ {review.skill_rating}</Text></View>
-            <View style={styles.statRow}><Text style={styles.statLabel}>Performance</Text><Text style={styles.statValue}>⭐ {review.performance_rating}</Text></View>
-            <View style={styles.statRow}><Text style={styles.statLabel}>Service Quality</Text><Text style={styles.statValue}>⭐ {review.service_quality_rating}</Text></View>
-            <View style={styles.statRow}><Text style={styles.statLabel}>Friendly</Text><Text style={styles.statValue}>⭐ {review.friendly_rating}</Text></View>
-            <View style={styles.statRow}><Text style={styles.statLabel}>Cost Efficiency</Text><Text style={styles.statValue}>⭐ {review.cost_efficiency_rating}</Text></View>
+            <View style={styles.statRow}><Text style={styles.statLabel}>Skill</Text><StarRating rating={review.skill_rating} /></View>
+            <View style={styles.statRow}><Text style={styles.statLabel}>Performance</Text><StarRating rating={review.performance_rating} /></View>
+            <View style={styles.statRow}><Text style={styles.statLabel}>Service Quality</Text><StarRating rating={review.service_quality_rating} /></View>
+            <View style={styles.statRow}><Text style={styles.statLabel}>Friendly</Text><StarRating rating={review.friendly_rating} /></View>
+            <View style={styles.statRow}><Text style={styles.statLabel}>Cost Efficiency</Text><StarRating rating={review.cost_efficiency_rating} /></View>
           </View>
 
           {review.review_text ? (
@@ -123,66 +134,75 @@ export default function ReviewView() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, backgroundColor: '#121212' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
     padding: 15,
     borderBottomWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#333333',
   },
-  backBtn: { marginRight: 15 },
-  title: { fontSize: 18, fontWeight: 'bold' },
+  backBtn: { padding: 5 },
+  title: { flex: 1, fontSize: 18, fontWeight: 'bold', color: '#FFC107', textAlign: 'center' },
   content: { padding: 15 },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#333333',
   },
-  author: { fontSize: 20, fontWeight: 'bold', color: '#333', marginBottom: 5 },
-  date: { color: '#888', fontSize: 14, marginBottom: 15 },
+  author: { fontSize: 20, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 5 },
+  date: { color: '#A0A0A0', fontSize: 14, marginBottom: 15 },
   overallRating: {
-    backgroundColor: '#fffbe6',
-    padding: 10,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#ffe58f',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  overallText: { color: '#d48806', fontSize: 18, fontWeight: 'bold' },
-  statsList: {
-    backgroundColor: '#fafafa',
-    padding: 15,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#eee',
-    marginBottom: 20,
-  },
-  statRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 5,
-  },
-  statLabel: { fontSize: 15, color: '#555' },
-  statValue: { fontSize: 15, fontWeight: 'bold', color: '#333' },
+            backgroundColor: '#FFC107',
+            padding: 20,
+            borderRadius: 20,
+            alignItems: 'center',
+            marginBottom: 25,
+            shadowColor: '#FFC107',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 10,
+            elevation: 8,
+          },
+          overallText: { color: '#121212', fontSize: 36, fontWeight: '900' },
+          overallLabel: { color: '#121212', fontSize: 14, fontWeight: '600', opacity: 0.8 },
+          statsList: {
+            backgroundColor: '#1A1A1A',
+            padding: 20,
+            borderRadius: 16,
+            marginBottom: 25,
+          },
+          statRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingVertical: 10,
+            borderBottomWidth: 1,
+            borderBottomColor: '#2A2A2A',
+          },
+  statLabel: { fontSize: 16, color: '#A0A0A0', fontWeight: '500' },
+  statValue: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },
   textContainer: {
-    marginTop: 10,
+    marginTop: 5,
+    backgroundColor: '#1A1A1A',
+    padding: 20,
+    borderRadius: 16,
   },
-  textLabel: { fontWeight: 'bold', fontSize: 16, marginBottom: 8, color: '#333' },
-  text: { fontSize: 15, color: '#444', lineHeight: 22 },
-  actions: { marginTop: 20, gap: 10 },
+  textLabel: { fontWeight: 'bold', fontSize: 16, marginBottom: 8, color: '#FFC107' },
+  text: { fontSize: 15, color: '#A0A0A0', lineHeight: 22 },
+  actions: { marginTop: 20, gap: 10, flexDirection: 'row' },
   btn: {
-    padding: 15,
-    borderRadius: 8,
+    flex: 1,
+    padding: 16,
+    borderRadius: 30,
     alignItems: 'center',
   },
-  editBtn: { backgroundColor: '#007aff' },
-  editBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  deleteBtn: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ff3b30' },
-  deleteBtnText: { color: '#ff3b30', fontWeight: 'bold', fontSize: 16 },
+  editBtn: { backgroundColor: '#FFC107' },
+  editBtnText: { color: '#121212', fontWeight: 'bold', fontSize: 16 },
+  deleteBtn: { backgroundColor: '#1E1E1E', borderWidth: 1, borderColor: '#F44336' },
+  deleteBtnText: { color: '#F44336', fontWeight: 'bold', fontSize: 16 },
 });

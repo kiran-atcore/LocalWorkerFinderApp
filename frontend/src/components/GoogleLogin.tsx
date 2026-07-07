@@ -72,7 +72,7 @@ export default function GoogleLogin({ type = 'register' }: { type?: 'login' | 'r
   return (
     <Pressable style={styles.button} onPress={onPress} disabled={loading}>
       {loading ? (
-        <ActivityIndicator color="#333" />
+        <ActivityIndicator color="#FFFFFF" />
       ) : (
         <>
           <Image 
@@ -93,27 +93,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#1E1E1E',
     borderWidth: 1,
-    borderColor: '#ddd',
-    paddingVertical: 14,
+    borderColor: '#333333',
+    paddingVertical: 16,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 30,
     marginVertical: 10,
+    width: '100%',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   icon: {
-    width: 20,
-    height: 20,
-    marginRight: 10,
+    width: 24,
+    height: 24,
+    position: 'absolute',
+    left: 24,
   },
   text: {
-    color: '#333',
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
 });

@@ -85,14 +85,14 @@ export default function BlockedList() {
     <SafeAreaView edges={['top']} style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#FFC107" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Blocked Users</Text>
         <View style={{ width: 24 }} />
       </View>
 
       <Text style={styles.roleText}>
-        Showing users you blocked as <Text style={{ fontWeight: 'bold' }}>{activeRole}</Text>
+        Showing users you blocked as <Text style={{ fontWeight: 'bold', color: '#FFFFFF' }}>{activeRole}</Text>
       </Text>
 
       {blockedUsers.length === 0 && !loading ? (
@@ -116,15 +116,15 @@ export default function BlockedList() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#121212',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#333333',
     justifyContent: 'space-between',
   },
   backButton: {
@@ -133,14 +133,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFC107',
   },
   roleText: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    color: '#666',
+    color: '#A0A0A0',
     fontSize: 14,
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
   },
   listContent: {
     padding: 15,
@@ -149,33 +149,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
+    backgroundColor: '#1E1E1E',
     padding: 15,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#333333'
   },
   userInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  avatarPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFEBEB', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  avatarPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#333333', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
   avatarImage: { width: 40, height: 40, borderRadius: 20, marginRight: 15 },
-  avatarText: { fontSize: 18, fontWeight: 'bold', color: '#D32F2F' },
+  avatarText: { fontSize: 18, fontWeight: 'bold', color: '#FFC107' },
   userName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#FFFFFF',
   },
   unblockButton: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#1E1E1E',
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#F44336'
   },
   unblockText: {
-    color: '#333',
+    color: '#F44336',
     fontWeight: '600',
     fontSize: 14,
   },
@@ -187,6 +186,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
+    color: '#A0A0A0',
   },
 });

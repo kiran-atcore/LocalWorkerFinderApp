@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
@@ -193,9 +193,9 @@ export default function LocationSetUp() {
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
       <style>
-        body { margin: 0; padding: 0; font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-        #map { width: 100vw; height: 100vh; }
-        .custom-marker { text-align: center; font-size: 30px; line-height: 30px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        body { margin: 0; padding: 0; font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #121212; }
+        #map { width: 100vw; height: 100vh; filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+        .custom-marker { text-align: center; font-size: 30px; line-height: 30px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); filter: invert(100%) hue-rotate(180deg); }
       </style>
       <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     </head>
@@ -236,29 +236,33 @@ export default function LocationSetUp() {
 
   if (loading || !coords) {
     return (
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" color="#007aff" />
-        <Text style={{marginTop: 10, color: '#666'}}>Loading Map...</Text>
+        <ActivityIndicator size="large" color="#FFC107" />
+        <Text style={{marginTop: 10, color: '#A0A0A0'}}>Loading Map...</Text>
       </SafeAreaView>
-    );
+    </KeyboardAvoidingView>
+  );
   }
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <SafeAreaView edges={['top']} style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#FFC107" />
         </Pressable>
         <View style={styles.searchBox}>
           <TextInput 
             style={styles.searchInput} 
             placeholder="Search location..." 
+            placeholderTextColor="#666666"
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
           />
           <Pressable onPress={handleSearch} style={styles.searchBtn}>
-            <Ionicons name="search" size={20} color="#666" />
+            <Ionicons name="search" size={20} color="#A0A0A0" />
           </Pressable>
         </View>
       </View>
@@ -275,7 +279,7 @@ export default function LocationSetUp() {
           showsVerticalScrollIndicator={false}
         />
         <View style={styles.addressOverlay}>
-          <Ionicons name="location-sharp" size={20} color="#007aff" />
+          <Ionicons name="location-sharp" size={20} color="#FFC107" />
           <Text style={styles.addressText} numberOfLines={2}>{address}</Text>
         </View>
       </View>
@@ -286,41 +290,39 @@ export default function LocationSetUp() {
           onPress={handleConfirm}
           disabled={isSaving}
         >
-          {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.confirmBtnText}>Confirm Location</Text>}
+          {isSaving ? <ActivityIndicator color="#121212" /> : <Text style={styles.confirmBtnText}>Confirm Location</Text>}
         </Pressable>
       </View>
     </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 10, borderBottomWidth: 1, borderColor: '#eee' },
+  container: { flex: 1, backgroundColor: '#121212' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 10, borderBottomWidth: 1, borderColor: '#333333', backgroundColor: '#121212' },
   backBtn: { padding: 5, marginRight: 5 },
-  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f0f0', borderRadius: 8, paddingHorizontal: 10 },
-  searchInput: { flex: 1, paddingVertical: 10, fontSize: 16 },
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#1E1E1E', borderRadius: 8, paddingHorizontal: 10, borderWidth: 1, borderColor: '#333333' },
+  searchInput: { flex: 1, paddingVertical: 10, fontSize: 16, color: '#FFFFFF' },
   searchBtn: { padding: 5 },
   mapContainer: { flex: 1, position: 'relative' },
-  webview: { flex: 1, backgroundColor: '#f5f5f5' },
+  webview: { flex: 1, backgroundColor: '#121212' },
   addressOverlay: {
     position: 'absolute',
     top: 20,
     left: 20,
     right: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#1E1E1E',
     padding: 15,
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#333333'
   },
-  addressText: { flex: 1, marginLeft: 10, fontSize: 14, fontWeight: '500', color: '#333' },
-  footer: { padding: 20, backgroundColor: '#fff', borderTopWidth: 1, borderColor: '#eee' },
-  confirmBtn: { backgroundColor: '#007aff', padding: 16, borderRadius: 12, alignItems: 'center' },
-  confirmBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  addressText: { flex: 1, marginLeft: 10, fontSize: 14, fontWeight: '500', color: '#FFFFFF' },
+  footer: { padding: 20, backgroundColor: '#121212', borderTopWidth: 1, borderColor: '#333333' },
+  confirmBtn: { backgroundColor: '#FFC107', padding: 16, borderRadius: 30, alignItems: 'center' },
+  confirmBtnText: { color: '#121212', fontSize: 16, fontWeight: 'bold' }
 });

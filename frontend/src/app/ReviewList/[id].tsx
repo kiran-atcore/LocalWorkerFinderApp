@@ -36,18 +36,25 @@ export default function ReviewList() {
     const dateStr = displayDate.toLocaleDateString() + ' ' + displayDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + (isEdited ? ' (Edited)' : '');
 
     return (
-      <Pressable 
-        style={styles.reviewCard} 
-        onPress={() => router.push(`/ReviewView/${item.id}` as any)}
-      >
-        <View style={styles.cardHeader}>
-          <Text style={styles.author}>{item.customer?.user?.first_name || 'Customer'} {item.customer?.user?.last_name || ''}</Text>
-          <Text style={styles.date}>{dateStr}</Text>
+      <Pressable key={item.id} style={styles.reviewCard} onPress={() => router.push(`/ReviewView/${item.id}` as any)}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFC107', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
+              <Text style={{ color: '#121212', fontWeight: 'bold', fontSize: 18 }}>
+                {(item.customer?.user?.first_name || 'C').charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View>
+              <Text style={styles.reviewAuthor}>{item.customer?.user?.first_name || 'Customer'} {item.customer?.user?.last_name || ''}</Text>
+              <Text style={{ color: '#A0A0A0', fontSize: 12 }}>{dateStr}</Text>
+            </View>
+          </View>
+          <View style={{ backgroundColor: '#1E1E1E', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: '#FFC107', flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="star" size={12} color="#FFC107" style={{ marginRight: 4 }} />
+            <Text style={styles.reviewStars}>{item.overall_rating.toFixed(1)}</Text>
+          </View>
         </View>
-        <Text style={styles.stars}>⭐ {item.overall_rating.toFixed(1)}</Text>
-        {item.review_text ? (
-          <Text style={styles.text} numberOfLines={2}>{item.review_text}</Text>
-        ) : null}
+        {item.review_text ? <Text style={styles.reviewText} numberOfLines={3}>"{item.review_text}"</Text> : null}
       </Pressable>
     );
   };
@@ -56,15 +63,16 @@ export default function ReviewList() {
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#FFC107" />
         </Pressable>
         <Text style={styles.title}>All Reviews</Text>
+        <View style={{ width: 24 }} />
       </View>
 
       {isLoading ? (
-        <View style={styles.center}><ActivityIndicator size="large" color="#007aff" /></View>
+        <View style={styles.center}><ActivityIndicator size="large" color="#FFC107" /></View>
       ) : reviews.length === 0 ? (
-        <View style={styles.center}><Text>No reviews found.</Text></View>
+        <View style={styles.center}><Text style={{color: '#A0A0A0'}}>No reviews found.</Text></View>
       ) : (
         <FlatList
           data={reviews}
@@ -78,36 +86,42 @@ export default function ReviewList() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, backgroundColor: '#121212' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
     padding: 15,
     borderBottomWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#333333',
   },
-  backBtn: { marginRight: 15 },
-  title: { fontSize: 18, fontWeight: 'bold' },
+  backBtn: { padding: 5 },
+  title: { flex: 1, fontSize: 18, fontWeight: 'bold', color: '#FFC107', textAlign: 'center' },
   list: { padding: 15 },
   reviewCard: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 15,
+    backgroundColor: '#1E1E1E',
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#333333',
+    borderRadius: 16,
+    padding: 15,
+    marginBottom: 12,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 5,
+  reviewAuthor: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 2,
+    color: '#FFFFFF',
   },
-  author: { fontWeight: 'bold', fontSize: 16, color: '#333' },
-  date: { color: '#888', fontSize: 12 },
-  stars: { color: '#d48806', fontSize: 14, marginBottom: 8 },
-  text: { color: '#555', fontSize: 14, lineHeight: 20 },
-  viewMore: { color: '#007aff', fontSize: 13, marginTop: 10, fontWeight: '500' }
+  reviewStars: {
+    color: '#FFC107',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  reviewText: {
+    color: '#A0A0A0',
+    fontSize: 14,
+    lineHeight: 20,
+    fontStyle: 'italic',
+  }
 });

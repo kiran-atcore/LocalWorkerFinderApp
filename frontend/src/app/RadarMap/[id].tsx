@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Dimensions, Platform, TextInput, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Dimensions, Platform, TextInput, Switch, KeyboardAvoidingView } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import Slider from '@react-native-community/slider';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -285,17 +285,17 @@ export default function RadarMapPage() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <style>
-          body { margin: 0; padding: 0; font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-          #map { width: 100vw; height: 100vh; }
-          .custom-marker { text-align: center; }
-          .pin-container { width: 36px; height: 36px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); background: #007AFF; display: flex; align-items: center; justify-content: center; }
+          body { margin: 0; padding: 0; font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #121212; }
+          #map { width: 100vw; height: 100vh; filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+          .custom-marker { text-align: center; filter: invert(100%) hue-rotate(180deg); }
+          .pin-container { width: 36px; height: 36px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); background: #FFC107; display: flex; align-items: center; justify-content: center; }
           .pin-applied { border: 3px solid #2ecc71; box-shadow: 0 0 10px rgba(46,204,113,0.8); background: #2ecc71; }
           .pin { color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; }
           .user-pin { background: #e74c3c; color: white; border-radius: 50%; width: 24px; height: 24px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-          .popup-container { text-align: center; padding: 5px; }
-          .btn { background: #007AFF; color: white; border: none; padding: 8px 12px; border-radius: 6px; margin-top: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+          .popup-container { text-align: center; padding: 5px; color: #333; }
+          .btn { background: #FFC107; color: #121212; border: none; padding: 8px 12px; border-radius: 6px; margin-top: 8px; font-weight: bold; cursor: pointer; width: 100%; }
           .capsule-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 6px; margin-bottom: 2px; }
-          .capsule { background-color: #E6F4FE; color: #007AFF; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+          .capsule { background-color: #E6F4FE; color: #FFC107; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
           .capsule-more { color: #888; font-size: 12px; font-weight: bold; align-self: center; padding: 0 2px; }
           .capsule-job { background-color: #E8F5E9; color: #2E7D32; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
           .applied-badge { background-color: #2ecc71; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-top: 5px; display: inline-block; }
@@ -335,18 +335,19 @@ export default function RadarMapPage() {
 
   if (loading || !center) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={{ marginTop: 10 }}>Scanning area...</Text>
+      <View style={[styles.loadingContainer, {backgroundColor: '#121212'}]}>
+        <ActivityIndicator size="large" color="#FFC107" />
+        <Text style={{ marginTop: 10, color: '#A0A0A0' }}>Scanning area...</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <SafeAreaView edges={['top']} style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#FFC107" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           Radar: {id === 'workers' ? 'Workers Nearby' : 'Jobs Nearby'}
@@ -356,10 +357,11 @@ export default function RadarMapPage() {
 
       <View style={styles.filterSection}>
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#666" style={{marginRight: 8}} />
+          <Ionicons name="search" size={20} color="#A0A0A0" style={{marginRight: 8}} />
           <TextInput
             style={styles.searchInput}
             placeholder={id === 'workers' ? "Search skills or workers..." : "Search jobs..."}
+            placeholderTextColor="#666666"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -371,11 +373,12 @@ export default function RadarMapPage() {
               <Switch
                 value={isRadiusEnabled}
                 onValueChange={setIsRadiusEnabled}
-                trackColor={{ false: '#ddd', true: '#007aff' }}
+                trackColor={{ false: '#333333', true: '#FFC107' }}
+                thumbColor={isRadiusEnabled ? '#FFFFFF' : '#f4f3f4'}
                 style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
               />
             </View>
-            <Text style={[styles.sliderValue, !isRadiusEnabled && { color: '#aaa' }]}>{radius} km</Text>
+            <Text style={[styles.sliderValue, !isRadiusEnabled && { color: '#666666' }]}>{radius} km</Text>
           </View>
           <Slider
             style={{ width: '100%', height: 40 }}
@@ -385,9 +388,9 @@ export default function RadarMapPage() {
             value={radius}
             onValueChange={setRadius}
             disabled={!isRadiusEnabled}
-            minimumTrackTintColor={isRadiusEnabled ? "#007aff" : "#ddd"}
-            maximumTrackTintColor="#ddd"
-            thumbTintColor={isRadiusEnabled ? "#007aff" : "#bbb"}
+            minimumTrackTintColor={isRadiusEnabled ? "#FFC107" : "#333333"}
+            maximumTrackTintColor="#333333"
+            thumbTintColor={isRadiusEnabled ? "#FFC107" : "#666666"}
           />
         </View>
       </View>
@@ -410,18 +413,20 @@ export default function RadarMapPage() {
         </Text>
       </View>
     </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#121212',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#121212'
   },
   header: {
     flexDirection: 'row',
@@ -429,29 +434,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 15,
     paddingVertical: 10,
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
     zIndex: 10,
   },
   filterSection: {
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
     paddingHorizontal: 15,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#333333',
     zIndex: 10,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    height: 40,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 16,
+    paddingHorizontal: 15,
+    height: 44,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#333333'
   },
   searchInput: {
     flex: 1,
     height: '100%',
+    color: '#FFFFFF'
   },
   sliderContainer: {
     width: '100%',
@@ -469,10 +477,11 @@ const styles = StyleSheet.create({
   sliderLabel: {
     fontWeight: 'bold',
     marginRight: 5,
+    color: '#FFFFFF'
   },
   sliderValue: {
     fontWeight: 'bold',
-    color: '#007aff',
+    color: '#FFC107',
   },
   backBtn: {
     padding: 5,
@@ -480,22 +489,24 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#FFC107'
   },
   map: {
     flex: 1,
     width: Dimensions.get('window').width,
+    backgroundColor: '#121212'
   },
   radarOverlay: {
     position: 'absolute',
     bottom: 30,
     alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: '#FFC107',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: 30,
   },
   radarText: {
-    color: '#fff',
+    color: '#121212',
     fontWeight: 'bold',
   },
 });

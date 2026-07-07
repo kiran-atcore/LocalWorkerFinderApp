@@ -10,7 +10,7 @@ export default function ChatInboxId() {
   const { id, name, other_user_id, profile_photo } = useLocalSearchParams();
   const router = useRouter();
   const { user, activeRole } = useAuthStore();
-  
+
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const flatListRef = useRef<FlatList>(null);
@@ -88,49 +88,49 @@ export default function ChatInboxId() {
   const handleMessageOptions = (msg: any) => {
     const isMyMessage = msg.sender?.id === user?.id;
 
-    const options = isMyMessage 
+    const options = isMyMessage
       ? [
-          { text: "Cancel", style: "cancel" },
-          { 
-            text: "Unsend", 
-            style: "destructive",
-            onPress: async () => {
-              try {
-                await api.delete(`/core/messages/${msg.id}/`);
-                fetchMessages();
-              } catch (err) {
-                console.error('Failed to unsend message', err);
-              }
-            }
-          },
-          { 
-            text: "Clear", 
-            style: "default",
-            onPress: async () => {
-              try {
-                await api.post(`/core/messages/${msg.id}/clear/?role=${activeRole}`);
-                fetchMessages();
-              } catch (err) {
-                console.error('Failed to clear message', err);
-              }
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Unsend",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.delete(`/core/messages/${msg.id}/`);
+              fetchMessages();
+            } catch (err) {
+              console.error('Failed to unsend message', err);
             }
           }
-        ]
+        },
+        {
+          text: "Clear",
+          style: "default",
+          onPress: async () => {
+            try {
+              await api.post(`/core/messages/${msg.id}/clear/?role=${activeRole}`);
+              fetchMessages();
+            } catch (err) {
+              console.error('Failed to clear message', err);
+            }
+          }
+        }
+      ]
       : [
-          { text: "Cancel", style: "cancel" },
-          { 
-            text: "Clear", 
-            style: "destructive",
-            onPress: async () => {
-              try {
-                await api.post(`/core/messages/${msg.id}/clear/?role=${activeRole}`);
-                fetchMessages();
-              } catch (err) {
-                console.error('Failed to clear message', err);
-              }
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.post(`/core/messages/${msg.id}/clear/?role=${activeRole}`);
+              fetchMessages();
+            } catch (err) {
+              console.error('Failed to clear message', err);
             }
           }
-        ];
+        }
+      ];
 
     Alert.alert(
       "Message Options",
@@ -146,8 +146,8 @@ export default function ChatInboxId() {
       "Delete this entire conversation?",
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Clear", 
+        {
+          text: "Clear",
           style: "destructive",
           onPress: async () => {
             try {
@@ -169,8 +169,8 @@ export default function ChatInboxId() {
       "Are you sure you want to block this user?",
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Block", 
+        {
+          text: "Block",
           style: "destructive",
           onPress: async () => {
             try {
@@ -193,7 +193,7 @@ export default function ChatInboxId() {
 
     return (
       <View style={[styles.messageWrapper, isMe ? styles.messageWrapperMe : styles.messageWrapperOther]}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.messageBubble, isMe ? styles.messageBubbleMe : styles.messageBubbleOther]}
           onLongPress={isBlockedByOther ? undefined : () => handleMessageOptions(item)}
           delayLongPress={500}
@@ -220,14 +220,14 @@ export default function ChatInboxId() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <KeyboardAvoidingView 
-        style={styles.container} 
+      <KeyboardAvoidingView
+        style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#007AFF" />
+            <Ionicons name="arrow-back" size={24} color="#FFC107" />
           </TouchableOpacity>
           <View style={styles.headerTitleContainer}>
             {profile_photo ? (
@@ -277,17 +277,18 @@ export default function ChatInboxId() {
             <TextInput
               style={styles.textInput}
               placeholder="Type a message..."
+              placeholderTextColor="#666666"
               value={inputText}
               onChangeText={setInputText}
               multiline
               maxLength={500}
             />
-            <TouchableOpacity 
-              style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]} 
+            <TouchableOpacity
+              style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
               onPress={handleSend}
               disabled={!inputText.trim()}
             >
-              <Ionicons name="send" size={20} color="#fff" />
+              <Ionicons name="send" size={20} color={inputText.trim() ? "#121212" : "#666666"} />
             </TouchableOpacity>
           </View>
         )}
@@ -299,20 +300,28 @@ export default function ChatInboxId() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#121212',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 15,
-    backgroundColor: '#fff',
+    paddingTop: 10,
+    paddingBottom: 15,
+    backgroundColor: '#121212',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#2A2A2A',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    elevation: 5,
+    zIndex: 10,
   },
   backButton: {
     padding: 5,
@@ -330,13 +339,13 @@ const styles = StyleSheet.create({
     padding: 5,
     marginLeft: 10,
   },
-  avatarPlaceholder: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#E3F2FD', justifyContent: 'center', alignItems: 'center', marginRight: 10 },
-  avatarImage: { width: 36, height: 36, borderRadius: 18, marginRight: 10 },
-  avatarText: { fontSize: 16, fontWeight: 'bold', color: '#1976D2' },
+  avatarPlaceholder: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFC107', justifyContent: 'center', alignItems: 'center', marginRight: 12, shadowColor: '#FFC107', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 4 },
+  avatarImage: { width: 44, height: 44, borderRadius: 22, marginRight: 12, borderWidth: 1, borderColor: '#FFC107' },
+  avatarText: { fontSize: 18, fontWeight: '900', color: '#121212' },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFFFFF',
   },
   messageList: {
     padding: 15,
@@ -357,95 +366,119 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   messageBubbleMe: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FFC107',
     borderBottomRightRadius: 4,
+    shadowColor: '#FFC107',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   messageBubbleOther: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1E1E1E',
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#333333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 3,
   },
   messageText: {
     fontSize: 16,
     marginBottom: 4,
   },
   messageTextMe: {
-    color: '#fff',
+    color: '#121212',
+    fontWeight: 'bold',
   },
   messageTextOther: {
-    color: '#333',
+    color: '#FFFFFF',
   },
   messageTime: {
     fontSize: 11,
     alignSelf: 'flex-end',
   },
   messageTimeMe: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: '#121212',
+    fontWeight: "bold",
   },
   messageTimeOther: {
-    color: '#999',
+    color: '#A0A0A0',
   },
   inputContainer: {
     flexDirection: 'row',
     padding: 10,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
+    paddingHorizontal: 15,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 15,
+    backgroundColor: '#1A1A1A',
     alignItems: 'flex-end',
+    borderTopWidth: 1,
+    borderTopColor: '#2A2A2A',
   },
   textInput: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingTop: 12,
-    paddingBottom: 12,
-    minHeight: 40,
-    maxHeight: 100,
+    backgroundColor: '#121212',
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 14,
+    minHeight: 48,
+    maxHeight: 120,
     fontSize: 16,
     marginRight: 10,
+    color: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#2A2A2A'
   },
   sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#007AFF',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFC107',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#FFC107',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 4,
   },
   sendButtonDisabled: {
-    backgroundColor: '#A5CFFF',
+    backgroundColor: '#2A2A2A',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   blockedBadgeContainer: {
     padding: 15,
-    backgroundColor: '#f8d7da',
+    backgroundColor: '#1E1E1E',
     alignItems: 'center',
     justifyContent: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#f5c6cb',
+    borderTopColor: '#F44336',
   },
   blockedBadgeText: {
-    color: '#721c24',
+    color: '#F44336',
     fontSize: 16,
     fontWeight: 'bold',
   },
   unblockContainer: {
     padding: 15,
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
     alignItems: 'center',
     justifyContent: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: '#333333',
   },
   unblockButton: {
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FFC107',
     borderRadius: 20,
   },
   unblockButtonText: {
-    color: '#fff',
+    color: '#121212',
     fontSize: 16,
     fontWeight: '600',
   },

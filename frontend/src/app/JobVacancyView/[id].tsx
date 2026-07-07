@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput, KeyboardAvoidingView, Platform, Image, LayoutAnimation, UIManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/axios';
@@ -200,7 +201,7 @@ export default function JobVacancyViewDetail() {
   if (loading || !vacancy) {
     return (
       <SafeAreaView style={styles.center}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#FFC107" />
       </SafeAreaView>
     );
   }
@@ -212,34 +213,86 @@ export default function JobVacancyViewDetail() {
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.backButtonText}>← Back</Text>
+            <Ionicons name="arrow-back" size={24} color="#FFC107" />
           </TouchableOpacity>
           <Text style={styles.title}>Job Details</Text>
+          <View style={{ width: 24 }} />
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <View style={{ flex: 1, marginRight: 10, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={[styles.category, { flexShrink: 1 }]} numberOfLines={1}>{vacancy.title}</Text>
+                <Text style={[styles.category, { flexShrink: 1 }]} numberOfLines={2}>{vacancy.title}</Text>
                 {!vacancy.is_active && (
-                  <Text style={{ fontSize: 11, color: '#C62828', fontWeight: 'bold', backgroundColor: '#FFEBEE', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>CLOSED</Text>
+                  <Text style={{ fontSize: 11, color: '#F44336', fontWeight: 'bold', backgroundColor: '#1E1E1E', borderColor: '#F44336', borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12, overflow: 'hidden' }}>CLOSED</Text>
                 )}
                 {vacancy.is_active && (
-                  <Text style={{ fontSize: 11, color: '#2E7D32', fontWeight: 'bold', backgroundColor: '#E8F5E9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>ACTIVE</Text>
+                  <Text style={{ fontSize: 11, color: '#4CAF50', fontWeight: 'bold', backgroundColor: '#1E1E1E', borderColor: '#4CAF50', borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 12, overflow: 'hidden' }}>ACTIVE</Text>
                 )}
               </View>
               <Text style={styles.remuneration}>${vacancy.remuneration}</Text>
             </View>
-            <Text style={styles.location}>📍 {vacancy.address_text || 'Location not specified'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
+              <Ionicons name="location" size={20} color="#FFC107" style={{ marginRight: 8 }} />
+              <Text style={[styles.location, { marginBottom: 0, flex: 1, fontSize: 16 }]}>{vacancy.address_text || 'Location not specified'}</Text>
+            </View>
+            {vacancy.latitude && vacancy.longitude && (
+              <View style={styles.mapContainer}>
+                <WebView
+                  style={styles.map}
+                  scrollEnabled={false}
+                  source={{
+                    html: `
+                      <!DOCTYPE html>
+                      <html>
+                        <head>
+                          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+                          <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                          <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                          <style>
+                            body { padding: 0; margin: 0; }
+                            #map { width: 100%; height: 100vh; filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+                          </style>
+                        </head>
+                        <body>
+                          <div id="map"></div>
+                          <script>
+                            var map = L.map('map', {
+                              zoomControl: false,
+                              dragging: false,
+                              scrollWheelZoom: false,
+                              doubleClickZoom: false,
+                              touchZoom: false
+                            }).setView([${vacancy.latitude}, ${vacancy.longitude}], 14);
+                            
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                              maxZoom: 19,
+                              attribution: '© OpenStreetMap'
+                            }).addTo(map);
+  
+                            L.marker([${vacancy.latitude}, ${vacancy.longitude}]).addTo(map);
+                          </script>
+                        </body>
+                      </html>
+                    `
+                  }}
+                />
+              </View>
+            )}
             {!!vacancy.contact_email && (
-              <Text style={[styles.location, { marginTop: 4 }]}>✉️ {vacancy.contact_email}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 15 }}>
+                <Ionicons name="mail" size={20} color="#FFC107" style={{ marginRight: 8 }} />
+                <Text style={[styles.location, { fontSize: 16 }]}>{vacancy.contact_email}</Text>
+              </View>
             )}
 
             <View style={styles.divider} />
 
             <Text style={styles.sectionTitle}>Description</Text>
-            <Text style={styles.description}>{vacancy.description}</Text>
+            <View style={styles.descriptionBox}>
+              <Text style={styles.description}>{vacancy.description}</Text>
+            </View>
 
             <Text style={styles.sectionTitle}>Experience Required</Text>
             <Text style={styles.text}>{vacancy.experience_required}</Text>
@@ -367,10 +420,10 @@ export default function JobVacancyViewDetail() {
                 <View style={styles.appliedCardWrapper}>
                   <View style={[styles.appliedCard, vacancy.application_status === 'PENDING' ? styles.appliedCardPENDING : vacancy.application_status === 'ACCEPTED' ? styles.appliedCardACCEPTED : vacancy.application_status === 'REJECTED' ? styles.appliedCardREJECTED : null]}>
                     <Text style={[styles.appliedText, vacancy.application_status === 'PENDING' ? styles.appliedTextPENDING : vacancy.application_status === 'ACCEPTED' ? styles.appliedTextACCEPTED : vacancy.application_status === 'REJECTED' ? styles.appliedTextREJECTED : null]}>
-                      {vacancy.application_status === 'PENDING' && '⏳ Your application is pending.'}
-                      {vacancy.application_status === 'ACCEPTED' && '✅ Your application has been accepted!'}
-                      {vacancy.application_status === 'REJECTED' && '❌ Your application was rejected.'}
-                      {!vacancy.application_status && '✅ You have applied for this job.'}
+                      {vacancy.application_status === 'PENDING' && 'Your application is pending'}
+                      {vacancy.application_status === 'ACCEPTED' && 'Your application has been accepted!'}
+                      {vacancy.application_status === 'REJECTED' && 'Your application was rejected.'}
+                      {!vacancy.application_status && 'You have applied for this job.'}
                     </Text>
                   </View>
                   {vacancy.application_status === 'ACCEPTED' && (
@@ -378,7 +431,7 @@ export default function JobVacancyViewDetail() {
                       style={[styles.cancelAppBtn, { backgroundColor: '#007AFF', borderColor: '#007AFF', marginBottom: 10 }]}
                       onPress={() => (router.push as any)(`/ChatInbox/new?other_user_id=${vacancy.customer_details.user_id}&name=${encodeURIComponent(vacancy.customer_details.name)}`)}
                     >
-                      <Text style={[styles.cancelAppText, { color: '#fff' }]}>💬 Chat with Client</Text>
+                      <Text style={[styles.cancelAppText, { color: '#fff' }]}>Chat with Client</Text>
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity
@@ -395,6 +448,7 @@ export default function JobVacancyViewDetail() {
                   <TextInput
                     style={styles.commentInput}
                     placeholder="Write a brief cover letter or comment..."
+                    placeholderTextColor="#A0A0A0"
                     multiline
                     numberOfLines={4}
                     value={comment}
@@ -418,76 +472,78 @@ export default function JobVacancyViewDetail() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
-  backButton: { marginRight: 15 },
-  backButtonText: { fontSize: 16, color: '#007AFF' },
-  title: { fontSize: 18, fontWeight: 'bold' },
+  container: { flex: 1, backgroundColor: '#121212' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 15, backgroundColor: '#121212', borderBottomWidth: 1, borderBottomColor: '#2A2A2A', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 5, elevation: 5, zIndex: 10 },
+  backButton: { padding: 5 },
+  title: { flex: 1, fontSize: 18, fontWeight: 'bold', textAlign: 'center', color: '#FFC107' },
   scrollContent: { padding: 15, paddingBottom: 40 },
-  card: { backgroundColor: '#fff', padding: 20, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 2, marginBottom: 20 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  category: { fontSize: 22, fontWeight: 'bold', color: '#333' },
-  remuneration: { fontSize: 20, fontWeight: 'bold', color: '#4CAF50' },
-  location: { fontSize: 14, color: '#666', marginBottom: 15 },
-  divider: { height: 1, backgroundColor: '#eee', marginVertical: 15 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 8 },
-  description: { fontSize: 15, color: '#555', lineHeight: 22, marginBottom: 15 },
-  text: { fontSize: 15, color: '#555', marginBottom: 15 },
+  card: { backgroundColor: '#1E1E1E', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#333333', marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 5 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 },
+  category: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' },
+  remuneration: { fontSize: 22, fontWeight: '900', color: '#FFC107' },
+  location: { fontSize: 14, color: '#A0A0A0' },
+  divider: { height: 1, backgroundColor: '#333333', marginVertical: 15 },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#FFC107', marginBottom: 8 },
+  descriptionBox: { backgroundColor: '#121212', padding: 15, borderRadius: 12, marginBottom: 15 },
+  description: { fontSize: 15, color: '#A0A0A0', lineHeight: 22 },
+  text: { fontSize: 15, color: '#FFFFFF', marginBottom: 15 },
   skillsContainer: { flexDirection: 'row', flexWrap: 'wrap' },
-  skillChip: { backgroundColor: '#E3F2FD', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, marginRight: 8, marginBottom: 8 },
-  skillText: { color: '#1976D2', fontSize: 13, fontWeight: '600' },
+  skillChip: { backgroundColor: '#333333', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, marginRight: 8, marginBottom: 8 },
+  skillText: { color: '#FFC107', fontSize: 13, fontWeight: '600' },
   applicationsSection: { marginTop: 10 },
-  applicationsTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 15 },
-  noApplicants: { color: '#888', fontStyle: 'italic', textAlign: 'center', padding: 20 },
-  applicantCard: { backgroundColor: '#fff', padding: 15, borderRadius: 12, marginBottom: 15, borderWidth: 1, borderColor: '#eee' },
+  applicationsTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 15, color: '#FFC107' },
+  noApplicants: { color: '#666666', fontStyle: 'italic', textAlign: 'center', padding: 20 },
+  applicantCard: { backgroundColor: '#1E1E1E', padding: 15, borderRadius: 16, marginBottom: 15, borderWidth: 1, borderColor: '#333333' },
   applicantHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
   avatar: { width: 50, height: 50, borderRadius: 25 },
-  avatarPlaceholder: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#ddd' },
+  avatarPlaceholder: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#333333' },
   applicantInfo: { flex: 1, marginLeft: 15 },
-  applicantName: { fontSize: 16, fontWeight: 'bold' },
-  applicantRating: { fontSize: 14, color: '#F5A623', marginTop: 4 },
-  viewProfileBtn: { padding: 8, backgroundColor: '#F0F0F0', borderRadius: 8 },
-  viewProfileText: { color: '#007AFF', fontSize: 12, fontWeight: 'bold' },
-  applicantComment: { fontSize: 14, color: '#555', fontStyle: 'italic', backgroundColor: '#F9F9F9', padding: 10, borderRadius: 8, marginBottom: 15 },
+  applicantName: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },
+  applicantRating: { fontSize: 14, color: '#FFC107', marginTop: 4 },
+  viewProfileBtn: { padding: 8, backgroundColor: '#333333', borderRadius: 8 },
+  viewProfileText: { color: '#FFC107', fontSize: 12, fontWeight: 'bold' },
+  applicantComment: { fontSize: 14, color: '#A0A0A0', fontStyle: 'italic', backgroundColor: '#121212', padding: 10, borderRadius: 8, marginBottom: 15 },
   applicantActions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, fontSize: 12, fontWeight: 'bold', overflow: 'hidden' },
-  statusPENDING: { backgroundColor: '#FFF3E0', color: '#F57C00' },
-  statusACCEPTED: { backgroundColor: '#E8F5E9', color: '#2E7D32' },
-  statusREJECTED: { backgroundColor: '#FFEBEE', color: '#C62828' },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, fontSize: 12, fontWeight: 'bold', overflow: 'hidden', borderWidth: 1 },
+  statusPENDING: { backgroundColor: '#1E1E1E', color: '#FFC107', borderColor: '#333333' },
+  statusACCEPTED: { backgroundColor: '#1E1E1E', color: '#4CAF50', borderColor: '#4CAF50' },
+  statusREJECTED: { backgroundColor: '#1E1E1E', color: '#F44336', borderColor: '#F44336' },
   actionButtons: { flexDirection: 'row', gap: 10 },
-  actionBtn: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: 8, minWidth: 70, alignItems: 'center' },
+  actionBtn: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: 30, minWidth: 70, alignItems: 'center' },
   acceptBtn: { backgroundColor: '#4CAF50' },
   rejectBtn: { backgroundColor: '#F44336' },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
-  applySection: { backgroundColor: '#fff', padding: 20, borderRadius: 12 },
-  commentInput: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 15, fontSize: 15, height: 100, textAlignVertical: 'top', marginBottom: 15, backgroundColor: '#F9F9F9' },
-  applyButton: { backgroundColor: '#007AFF', padding: 15, borderRadius: 12, alignItems: 'center' },
+  btnText: { color: '#121212', fontWeight: 'bold', fontSize: 13 },
+  applySection: { backgroundColor: '#1E1E1E', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#333333' },
+  commentInput: { borderWidth: 1, borderColor: '#333333', borderRadius: 12, padding: 15, fontSize: 15, height: 100, textAlignVertical: 'top', marginBottom: 15, backgroundColor: '#121212', color: '#FFFFFF' },
+  applyButton: { backgroundColor: '#FFC107', padding: 15, borderRadius: 30, alignItems: 'center' },
   applyButtonDisabled: { opacity: 0.6 },
-  applyButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  applyButtonText: { color: '#121212', fontSize: 16, fontWeight: 'bold' },
   appliedCardWrapper: { gap: 10 },
-  appliedCard: { backgroundColor: '#E8F5E9', padding: 15, borderRadius: 8, alignItems: 'center' },
-  appliedText: { color: '#2E7D32', fontWeight: 'bold', fontSize: 15 },
-  appliedCardPENDING: { backgroundColor: '#FFF3E0' },
-  appliedTextPENDING: { color: '#F57C00' },
-  appliedCardACCEPTED: { backgroundColor: '#E8F5E9' },
-  appliedTextACCEPTED: { color: '#2E7D32' },
-  appliedCardREJECTED: { backgroundColor: '#FFEBEE' },
-  appliedTextREJECTED: { color: '#C62828' },
-  cancelAppBtn: { padding: 12, borderRadius: 8, alignItems: 'center', backgroundColor: '#FFEBEE', borderWidth: 1, borderColor: '#FFCDD2' },
-  cancelAppText: { color: '#D32F2F', fontWeight: 'bold', fontSize: 15 },
-  clientProfileContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9F9F9', padding: 15, borderRadius: 12, marginBottom: 15 },
+  appliedCard: { backgroundColor: '#1E1E1E', padding: 15, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#4CAF50' },
+  appliedText: { color: '#4CAF50', fontWeight: 'bold', fontSize: 15 },
+  appliedCardPENDING: { borderColor: '#FFC107' },
+  appliedTextPENDING: { color: '#FFC107' },
+  appliedCardACCEPTED: { borderColor: '#4CAF50' },
+  appliedTextACCEPTED: { color: '#4CAF50' },
+  appliedCardREJECTED: { borderColor: '#F44336' },
+  appliedTextREJECTED: { color: '#F44336' },
+  cancelAppBtn: { padding: 12, borderRadius: 30, alignItems: 'center', backgroundColor: '#1E1E1E', borderWidth: 1, borderColor: '#F44336' },
+  cancelAppText: { color: '#F44336', fontWeight: 'bold', fontSize: 15 },
+  clientProfileContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#121212', padding: 15, borderRadius: 12, marginBottom: 15 },
   clientAvatar: { width: 50, height: 50, borderRadius: 25, marginRight: 15 },
-  clientAvatarPlaceholder: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#007AFF20', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-  clientAvatarText: { fontSize: 20, fontWeight: 'bold', color: '#007AFF' },
+  clientAvatarPlaceholder: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#333333', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  clientAvatarText: { fontSize: 20, fontWeight: 'bold', color: '#FFFFFF' },
   clientInfo: { flex: 1 },
-  clientName: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-  clientEmail: { fontSize: 14, color: '#666', marginTop: 2 },
+  clientName: { fontSize: 16, fontWeight: 'bold', color: '#FFFFFF' },
+  clientEmail: { fontSize: 14, color: '#A0A0A0', marginTop: 2 },
   manageActions: { flexDirection: 'row', marginTop: 20, gap: 10 },
-  manageBtn: { flex: 1, padding: 12, borderRadius: 8, alignItems: 'center' },
-  editBtn: { backgroundColor: '#F0F0F0' },
-  closeBtn: { backgroundColor: '#FFF3E0' },
-  reopenBtn: { backgroundColor: '#E8F5E9' },
-  deleteBtn: { backgroundColor: '#FFEBEE' },
-  manageBtnText: { fontWeight: 'bold', fontSize: 14, color: '#333' }
+  manageBtn: { flex: 1, padding: 14, borderRadius: 30, alignItems: 'center', borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 3 },
+  editBtn: { backgroundColor: '#333333', borderColor: '#444444' },
+  closeBtn: { backgroundColor: '#1A1A1A', borderColor: '#E65100' },
+  reopenBtn: { backgroundColor: '#1A1A1A', borderColor: '#2E7D32' },
+  deleteBtn: { backgroundColor: '#1A1A1A', borderColor: '#C62828' },
+  manageBtnText: { fontWeight: 'bold', fontSize: 14, color: '#FFFFFF' },
+  mapContainer: { height: 150, width: '100%', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#2A2A2A', marginTop: 10 },
+  map: { flex: 1 }
 });

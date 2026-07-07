@@ -21,9 +21,9 @@ class RegisterView(views.APIView):
             email = serializer.validated_data['email']
             otp = str(random.randint(100000, 999999))
             
-            print(f"=====================================")
-            print(f"OTP FOR {email}: {otp}")
-            print(f"=====================================")
+            # print(f"=====================================")
+            # print(f"OTP FOR {email}: {otp}")
+            # print(f"=====================================")
 
             # Store OTP and registration data
             EmailOTP.objects.update_or_create(
@@ -35,20 +35,19 @@ class RegisterView(views.APIView):
                 }
             )
 
-            # --- REAL EMAIL OTP SETUP (COMMENTED OUT) ---
-            # from django.core.mail import send_mail
-            # from django.conf import settings
-            # try:
-            #     send_mail(
-            #         subject='Your Registration OTP',
-            #         message=f'Your verification code is {otp}. This code will expire in 4 minutes.',
-            #         from_email=settings.DEFAULT_FROM_EMAIL,
-            #         recipient_list=[email],
-            #         fail_silently=False,
-            #     )
-            # except Exception as e:
-            #     print(f"Failed to send email: {e}")
-            # --------------------------------------------
+            # Send the OTP Email
+            from django.core.mail import send_mail
+            from django.conf import settings
+            try:
+                send_mail(
+                    subject='Your Registration OTP',
+                    message=f'Your verification code is {otp}. This code will expire in 4 minutes.',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                print(f"Failed to send email: {e}")
 
             return Response({
                 "message": "OTP sent to email.",
@@ -116,24 +115,23 @@ class ResendOTPView(views.APIView):
         otp_record.created_at = timezone.now()
         otp_record.save()
 
-        print(f"=====================================")
-        print(f"NEW OTP FOR {email}: {otp}")
-        print(f"=====================================")
+        # print(f"=====================================")
+        # print(f"NEW OTP FOR {email}: {otp}")
+        # print(f"=====================================")
 
-        # --- REAL EMAIL OTP SETUP (COMMENTED OUT) ---
-        # from django.core.mail import send_mail
-        # from django.conf import settings
-        # try:
-        #     send_mail(
-        #         subject='Your New Registration OTP',
-        #         message=f'Your new verification code is {otp}. This code will expire in 4 minutes.',
-        #         from_email=settings.DEFAULT_FROM_EMAIL,
-        #         recipient_list=[email],
-        #         fail_silently=False,
-        #     )
-        # except Exception as e:
-        #     print(f"Failed to send email: {e}")
-        # --------------------------------------------
+        # Send the OTP Email
+        from django.core.mail import send_mail
+        from django.conf import settings
+        try:
+            send_mail(
+                subject='Your New Registration OTP',
+                message=f'Your new verification code is {otp}. This code will expire in 4 minutes.',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            print(f"Failed to send email: {e}")
 
         return Response({"message": "OTP resent successfully."}, status=status.HTTP_200_OK)
 

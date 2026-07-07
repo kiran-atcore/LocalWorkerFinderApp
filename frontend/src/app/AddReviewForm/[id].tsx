@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import api from '../../services/axios';
@@ -9,14 +9,14 @@ export default function AddReviewForm() {
   const { id, editId } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  
+
   const [skillRating, setSkillRating] = useState(5);
   const [performanceRating, setPerformanceRating] = useState(5);
   const [serviceQualityRating, setServiceQualityRating] = useState(5);
   const [friendlyRating, setFriendlyRating] = useState(5);
   const [costEfficiencyRating, setCostEfficiencyRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -86,11 +86,11 @@ export default function AddReviewForm() {
       <Text style={styles.starLabel}>{label}</Text>
       <View style={styles.stars}>
         {[1, 2, 3, 4, 5].map((star) => (
-          <Pressable key={star} onPress={() => setter(star)}>
-            <Ionicons 
-              name={star <= value ? 'star' : 'star-outline'} 
-              size={32} 
-              color={star <= value ? '#fadb14' : '#d9d9d9'} 
+          <Pressable key={star} onPress={() => setter(star)} style={styles.starPressable}>
+            <Ionicons
+              name={star <= value ? 'star' : 'star-outline'}
+              size={28}
+              color={star <= value ? '#FFC107' : '#333333'}
             />
           </Pressable>
         ))}
@@ -98,17 +98,23 @@ export default function AddReviewForm() {
     </View>
   );
 
-  if (isLoading) return <View style={styles.center}><ActivityIndicator size="large" color="#007aff" /></View>;
+  if (isLoading) return <View style={styles.center}><ActivityIndicator size="large" color="#FFC107" /></View>;
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: '#fff' }}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: '#121212' }}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#FFC107" />
         </Pressable>
         <Text style={styles.headerTitle}>{editId ? 'Edit Review' : 'Add Review'}</Text>
+        <View style={{ width: 24 }} />
       </View>
       <ScrollView contentContainerStyle={[styles.container, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+        <View style={styles.introContainer}>
+          <Text style={styles.introTitle}>Rate your experience</Text>
+          <Text style={styles.introSubtitle}>Your feedback helps our community.</Text>
+        </View>
         {renderStars('Skill', skillRating, setSkillRating)}
         {renderStars('Performance', performanceRating, setPerformanceRating)}
         {renderStars('Service Quality', serviceQualityRating, setServiceQualityRating)}
@@ -123,62 +129,91 @@ export default function AddReviewForm() {
           value={reviewText}
           onChangeText={setReviewText}
           placeholder="Share your experience with this worker..."
+          placeholderTextColor="#666666"
           textAlignVertical="top"
         />
 
-        <Pressable 
-          style={styles.submitBtn} 
-          onPress={submitReview} 
+        <Pressable
+          style={styles.submitBtn}
+          onPress={submitReview}
           disabled={isSubmitting}
         >
           {isSubmitting ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color="#121212" />
           ) : (
             <Text style={styles.submitBtnText}>{editId ? 'Update Review' : 'Submit Review'}</Text>
           )}
         </Pressable>
       </ScrollView>
     </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
     borderBottomWidth: 1,
-    borderColor: '#eee',
-    backgroundColor: '#fff',
+    borderColor: '#333333',
+    backgroundColor: '#121212',
   },
-  backButton: { marginRight: 15 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold' },
+  backButton: { padding: 5 },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: 'bold', color: '#FFC107', textAlign: 'center' },
   container: { padding: 20 },
+  introContainer: {
+    marginBottom: 25,
+    alignItems: 'center',
+  },
+  introTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFC107',
+    marginBottom: 5,
+  },
+  introSubtitle: {
+    fontSize: 14,
+    color: '#A0A0A0',
+  },
   starRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
+    backgroundColor: '#1A1A1A',
+    padding: 10,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
   },
-  starLabel: { fontSize: 16, fontWeight: '500', color: '#333' },
-  stars: { flexDirection: 'row', gap: 5 },
-  inputLabel: { fontSize: 16, fontWeight: '500', marginTop: 10, marginBottom: 10, color: '#333' },
+  starLabel: { fontSize: 13, fontWeight: '600', color: '#FFFFFF', flex: 1 },
+  stars: { flexDirection: 'row', gap: 2 },
+  starPressable: { padding: 2 },
+  inputLabel: { fontSize: 18, fontWeight: 'bold', marginTop: 15, marginBottom: 15, color: '#FFC107' },
   textInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
+    borderColor: '#2A2A2A',
+    borderRadius: 16,
+    padding: 20,
     fontSize: 16,
-    minHeight: 120,
-    backgroundColor: '#fafafa',
+    minHeight: 140,
+    backgroundColor: '#1A1A1A',
+    color: '#FFFFFF'
   },
   submitBtn: {
-    backgroundColor: '#007aff',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#FFC107',
+    padding: 18,
+    borderRadius: 30,
     alignItems: 'center',
-    marginTop: 30,
+    marginTop: 40,
+    shadowColor: '#FFC107',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  submitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  submitBtnText: { color: '#121212', fontSize: 18, fontWeight: '900' },
 });

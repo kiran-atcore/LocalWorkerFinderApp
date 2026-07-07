@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Image, ActivityIndicator, TextInput, Switch } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, Image, ActivityIndicator, TextInput, Switch, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,7 +25,7 @@ export default function CategoryListScreen() {
   const [minExp, setMinExp] = useState(0);
   const [radius, setRadius] = useState(50); // Default 50km
   const [isRadiusEnabled, setIsRadiusEnabled] = useState(true);
-  
+
   const { searchLocation } = useAuthStore();
 
   const categoryName = typeof id === 'string' ? id.charAt(0).toUpperCase() + id.slice(1).replace('_', ' ') : 'Category';
@@ -85,10 +85,10 @@ export default function CategoryListScreen() {
     const R = 6371; // km
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
 
@@ -106,7 +106,7 @@ export default function CategoryListScreen() {
     const name = worker.user.first_name ? `${worker.user.first_name} ${worker.user.last_name}` : worker.user.username;
     const categoryObj = CATEGORIES.find(c => c.id === id);
     const categoryName = categoryObj ? categoryObj.name.toLowerCase() : '';
-    
+
     // Reverse mapping for display names
     const roleToCategory: Record<string, string> = {
       "painter": "painting",
@@ -123,33 +123,33 @@ export default function CategoryListScreen() {
     const parsedTextLower = parsedText.toLowerCase();
     const categoryMatchStr = roleToCategory[parsedTextLower] || parsedTextLower;
 
-    const isCategoryMatch = categoryName.includes(parsedTextLower) || 
-                            id.toString().toLowerCase().includes(parsedTextLower) ||
-                            categoryName.includes(categoryMatchStr) ||
-                            id.toString().toLowerCase().includes(categoryMatchStr);
-    
+    const isCategoryMatch = categoryName.includes(parsedTextLower) ||
+      id.toString().toLowerCase().includes(parsedTextLower) ||
+      categoryName.includes(categoryMatchStr) ||
+      id.toString().toLowerCase().includes(categoryMatchStr);
+
     if (parsedText && !isCategoryMatch && !name.toLowerCase().includes(parsedTextLower)) return false;
-    
+
     const rate = parseFloat(role.hourly_rate) || 0;
     if (maxRate < 200 && rate > maxRate) return false;
     if (minRate > 0 && rate < minRate) return false;
-    
+
     if (minExp > 0 && role.experience_years < minExp) return false;
-    
+
     const rating = parseFloat(worker.rating) || 0;
     if (minRating > 0 && rating < minRating) return false;
-    
+
     if (isRadiusEnabled && role.distance !== undefined) {
       if (role.distance > radius) return false;
     }
-    
+
     return true;
   });
 
   const renderWorker = ({ item }: { item: any }) => {
     const worker = item.worker;
     const name = worker.user.first_name ? `${worker.user.first_name} ${worker.user.last_name}` : worker.user.username;
-    
+
     return (
       <Pressable style={styles.card} onPress={() => router.push(`/ServiceView/${item.id}` as any)}>
         {worker.profile_photo ? (
@@ -163,7 +163,7 @@ export default function CategoryListScreen() {
           <Text style={styles.workerName}>{name}</Text>
           {worker.business_name ? <Text style={styles.businessName}>{worker.business_name}</Text> : null}
           <View style={styles.ratingRow}>
-            <Ionicons name="star" size={16} color="#f1c40f" />
+            <Ionicons name="star" size={16} color="#FFC107" />
             <Text style={styles.ratingText}>{worker.rating.toFixed(1)}</Text>
             {item.distance !== undefined && (
               <>
@@ -182,10 +182,11 @@ export default function CategoryListScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: '#121212' }}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#FFC107" />
         </Pressable>
         <Text style={styles.title}>{categoryName} Workers</Text>
         <View style={{ width: 24 }} />
@@ -193,10 +194,11 @@ export default function CategoryListScreen() {
 
       <View style={styles.filterContainer}>
         <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color="#888" />
-          <TextInput 
+          <Ionicons name="search" size={20} color="#A0A0A0" />
+          <TextInput
             style={styles.searchInput}
             placeholder="Search by worker name..."
+            placeholderTextColor="#666666"
             value={searchText}
             onChangeText={setSearchText}
           />
@@ -211,8 +213,9 @@ export default function CategoryListScreen() {
               step={5}
               value={maxRate}
               onValueChange={setMaxRate}
-              minimumTrackTintColor="#007aff"
-              maximumTrackTintColor="#ddd"
+              minimumTrackTintColor="#FFC107"
+              maximumTrackTintColor="#333333"
+              thumbTintColor="#FFC107"
             />
           </View>
           <View style={styles.sliderCol}>
@@ -224,8 +227,9 @@ export default function CategoryListScreen() {
               step={1}
               value={minExp}
               onValueChange={setMinExp}
-              minimumTrackTintColor="#007aff"
-              maximumTrackTintColor="#ddd"
+              minimumTrackTintColor="#FFC107"
+              maximumTrackTintColor="#333333"
+              thumbTintColor="#FFC107"
             />
           </View>
         </View>
@@ -237,11 +241,12 @@ export default function CategoryListScreen() {
               <Switch
                 value={isRadiusEnabled}
                 onValueChange={setIsRadiusEnabled}
-                trackColor={{ false: '#ddd', true: '#007aff' }}
+                trackColor={{ false: '#333333', true: '#FFC107' }}
+                thumbColor="#ffffff"
                 style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
               />
             </View>
-            <Text style={[styles.sliderValue, !isRadiusEnabled && { color: '#aaa' }]}>{radius} km</Text>
+            <Text style={[styles.sliderValue, !isRadiusEnabled && { color: '#666666' }]}>{radius} km</Text>
           </View>
           <Slider
             style={{ width: '100%', height: 40 }}
@@ -251,16 +256,16 @@ export default function CategoryListScreen() {
             value={radius}
             onValueChange={setRadius}
             disabled={!isRadiusEnabled}
-            minimumTrackTintColor={isRadiusEnabled ? "#007aff" : "#ddd"}
-            maximumTrackTintColor="#ddd"
-            thumbTintColor={isRadiusEnabled ? "#007aff" : "#bbb"}
+            minimumTrackTintColor={isRadiusEnabled ? "#FFC107" : "#333333"}
+            maximumTrackTintColor="#333333"
+            thumbTintColor={isRadiusEnabled ? "#FFC107" : "#666666"}
           />
         </View>
       </View>
 
       {isLoading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#007aff" />
+          <ActivityIndicator size="large" color="#FFC107" />
         </View>
       ) : (
         <FlatList
@@ -272,6 +277,7 @@ export default function CategoryListScreen() {
         />
       )}
     </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -280,9 +286,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee'
+    borderBottomColor: '#333333'
   },
   backButton: {
     padding: 5,
@@ -292,27 +298,31 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
+    color: '#FFC107'
   },
   filterContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#333333',
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1E1E1E',
     borderRadius: 8,
     paddingHorizontal: 10,
     height: 40,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#333333'
   },
   searchInput: {
     flex: 1,
     marginLeft: 8,
     fontSize: 15,
+    color: '#FFFFFF'
   },
   slidersRow: {
     flexDirection: 'row',
@@ -324,7 +334,7 @@ const styles = StyleSheet.create({
   },
   filterLabel: {
     fontSize: 12,
-    color: '#666',
+    color: '#A0A0A0',
     fontWeight: '500',
     marginBottom: 4,
   },
@@ -337,22 +347,19 @@ const styles = StyleSheet.create({
   },
   card: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: '#1E1E1E',
     padding: 15,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 12,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#333333'
   },
   avatarPlaceholder: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#333333',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
@@ -370,10 +377,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 2,
+    color: '#FFFFFF'
   },
   businessName: {
     fontSize: 13,
-    color: '#666',
+    color: '#A0A0A0',
     marginBottom: 4,
   },
   ratingRow: {
@@ -382,17 +390,18 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 14,
-    color: '#666',
+    color: '#A0A0A0',
     marginLeft: 4,
+    fontWeight: 'bold'
   },
   dotSeparator: {
     fontSize: 14,
-    color: '#bdc3c7',
+    color: '#333333',
     marginHorizontal: 8,
   },
   distanceText: {
     fontSize: 13,
-    color: '#7f8c8d',
+    color: '#A0A0A0',
     marginLeft: 2,
   },
   priceContainer: {
@@ -401,17 +410,17 @@ const styles = StyleSheet.create({
   priceText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#FFC107',
   },
   emptyText: {
     textAlign: 'center',
     marginTop: 50,
-    color: '#888',
+    color: '#A0A0A0',
     fontSize: 16,
   },
   sliderContainer: { marginTop: 15 },
   sliderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 },
   sliderLabelContainer: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  sliderLabel: { fontSize: 14, fontWeight: '600', color: '#555' },
-  sliderValue: { fontSize: 14, fontWeight: 'bold', color: '#007aff' },
+  sliderLabel: { fontSize: 14, fontWeight: '600', color: '#A0A0A0' },
+  sliderValue: { fontSize: 14, fontWeight: 'bold', color: '#FFC107' },
 });

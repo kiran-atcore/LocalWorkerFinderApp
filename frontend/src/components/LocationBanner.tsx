@@ -180,11 +180,11 @@ export default function LocationBanner({ mode = 'search' }: { mode?: 'search' | 
   return (
     <View style={styles.container}>
       <Pressable style={styles.mainPressable} onPress={handlePress}>
-        <Ionicons name="location-sharp" size={24} color="#007aff" />
+        <Ionicons name="location-sharp" size={24} color="#FFC107" />
         <View style={styles.textContainer}>
           <Text style={styles.label}>Current Location</Text>
           {loading ? (
-            <ActivityIndicator size="small" color="#007aff" style={{ alignSelf: 'flex-start' }} />
+            <ActivityIndicator size="small" color="#FFC107" style={{ alignSelf: 'flex-start' }} />
           ) : (
             <Text style={styles.address} numberOfLines={1}>{address}</Text>
           )}
@@ -192,7 +192,7 @@ export default function LocationBanner({ mode = 'search' }: { mode?: 'search' | 
       </Pressable>
       
       <Pressable style={styles.detectBtn} onPress={detectLocation}>
-        <Ionicons name="locate" size={24} color="#007aff" />
+        <Ionicons name="locate" size={24} color="#FFC107" />
       </Pressable>
     </View>
   );
@@ -202,9 +202,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#121212',
     borderBottomWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#333333',
   },
   mainPressable: {
     flex: 1,
@@ -226,12 +226,12 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    color: '#888',
+    color: '#A0A0A0',
     marginBottom: 2,
   },
   address: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#FFFFFF',
   }
 });

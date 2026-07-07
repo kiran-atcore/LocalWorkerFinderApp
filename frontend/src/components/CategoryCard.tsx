@@ -39,7 +39,7 @@ export default function CategoryCard({ id, name, iconName, iconFamily = 'Ionicon
   };
 
   return (
-    <Pressable 
+    <Pressable
       style={({ pressed }) => [
         styles.card,
         isActive && styles.activeCard,
@@ -81,9 +81,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   name: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
-    color: '#444',
+    color: '#FFFFFF',
     textAlign: 'center',
   }
 });
