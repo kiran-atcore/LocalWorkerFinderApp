@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 // Configure Google Sign-In with the Web Client ID
 // Native Android automatically uses the Web Client ID config to fetch the idToken securely
 GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '538093779803-ds1pr782ea9odg8kesk4fptt41sokb0h.apps.googleusercontent.com',
   iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '',
   // offlineAccess: true, // if you want to access Google API on behalf of the user FROM YOUR SERVER
 });

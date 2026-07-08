@@ -14,7 +14,8 @@ export const getImageUrl = (path: string | null | undefined) => {
   if (!path) return null;
   if (path.startsWith('http') || path.startsWith('file://')) return path;
   
-  const base = process.env.EXPO_PUBLIC_BASE_URL || 'http://172.30.182.203:8000';
+  // Use the Render URL as fallback instead of local IP
+  const base = process.env.EXPO_PUBLIC_BASE_URL || 'https://vicinio-localworkerfinderapp.onrender.com';
   return `${base}${path.startsWith('/') ? '' : '/'}${path}`;
 };
 
