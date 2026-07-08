@@ -258,10 +258,15 @@ class DeleteAccountView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def delete(self, request, *args, **kwargs):
-        user = request.user
-        logout(request)
-        user.delete()
-        return Response({"message": "Account deleted successfully."}, status=status.HTTP_200_OK)
+        try:
+            user = request.user
+            logout(request)
+            user.delete()
+            return Response({"message": "Account deleted successfully."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            import traceback
+            error_msg = str(e) + "\n" + traceback.format_exc()
+            return Response({"error": "Failed to delete account", "details": error_msg}, status=status.HTTP_400_BAD_REQUEST)
 
 class DeviceTokenView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
