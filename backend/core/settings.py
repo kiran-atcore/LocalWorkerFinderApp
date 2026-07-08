@@ -125,9 +125,12 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8081',
     'http://127.0.0.1:8081',
     'http://10.0.2.2:8081', # Android Emulator loopback
+    'https://vicinio-localworkerfinderapp.onrender.com',
 ]
 
 # Optional: For development with session auth over HTTP
-SESSION_COOKIE_SAMESITE = 'Lax' 
-CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = False
