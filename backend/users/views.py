@@ -259,8 +259,8 @@ class DeleteAccountView(views.APIView):
 
     def delete(self, request, *args, **kwargs):
         user = request.user
-        user.delete()
         logout(request)
+        user.delete()
         return Response({"message": "Account deleted successfully."}, status=status.HTTP_200_OK)
 
 class DeviceTokenView(views.APIView):
