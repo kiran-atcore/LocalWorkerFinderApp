@@ -7,6 +7,15 @@ from .models import Review
 @receiver(post_delete, sender=Review)
 def update_worker_rating(sender, instance, **kwargs):
     worker = instance.worker
+    
+    # If the worker is being deleted in a cascade, updating it will crash. 
+    # Check if it still exists in the database.
+    try:
+        from .models import WorkerProfile
+        WorkerProfile.objects.get(pk=worker.pk)
+    except WorkerProfile.DoesNotExist:
+        return
+        
     reviews = worker.reviews.all()
     if reviews.exists():
         avg_rating = reviews.aggregate(Avg('overall_rating'))['overall_rating__avg']
