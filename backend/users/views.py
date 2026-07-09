@@ -26,13 +26,12 @@ class RegisterView(views.APIView):
             # print(f"=====================================")
 
             # Store OTP and registration data
-            EmailOTP.objects.update_or_create(
+            EmailOTP.objects.filter(email=email).delete()
+            EmailOTP.objects.create(
                 email=email,
-                defaults={
-                    'otp_code': otp,
-                    'registration_data': request.data,
-                    'attempts': 0
-                }
+                otp_code=otp,
+                registration_data=request.data,
+                attempts=0
             )
 
             # Send the OTP Email
