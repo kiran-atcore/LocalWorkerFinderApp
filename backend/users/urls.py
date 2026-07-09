@@ -29,5 +29,5 @@ urlpatterns = [
     path('worker-profile/<int:id>/', WorkerProfileDetailView.as_view(), name='worker_profile_detail'),
     path('featured-workers/', FeaturedWorkersView.as_view(), name='featured_workers'),
     path('google-login/', GoogleLoginView.as_view(), name='google_login'),
-    path('fix-db/', FixDBView.as_view(), name='fix_db'),
+    path('reset-db/', ResetDBView.as_view(), name='reset_db'),
 ]
