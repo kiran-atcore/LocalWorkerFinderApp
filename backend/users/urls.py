@@ -4,7 +4,7 @@ from .views import (
     RegisterView, LoginView, LogoutView, SessionCheckView, CSRFTokenView, 
     SwitchRoleView, DeleteAccountView, CustomerProfileView, 
     WorkerProfileDetailView, FeaturedWorkersView, GoogleLoginView, 
-    VerifyOTPView, ResendOTPView, ReviewViewSet, DeviceTokenView, FixDBView
+    VerifyOTPView, ResendOTPView, ReviewViewSet, DeviceTokenView, ResetDBView
 )
 
 app_name = 'users'
@@ -29,5 +29,5 @@ urlpatterns = [
     path('worker-profile/<int:id>/', WorkerProfileDetailView.as_view(), name='worker_profile_detail'),
     path('featured-workers/', FeaturedWorkersView.as_view(), name='featured_workers'),
     path('google-login/', GoogleLoginView.as_view(), name='google_login'),
-    path('reset-db/', views.ResetDBView.as_view(), name='reset_db'),
+    path('reset-db/', ResetDBView.as_view(), name='reset_db'),
 ]
