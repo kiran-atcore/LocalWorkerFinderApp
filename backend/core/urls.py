@@ -42,6 +42,9 @@ router.register(r'conversations', ConversationViewSet, basename='conversation')
 router.register(r'messages', MessageViewSet, basename='message')
 router.register(r'blocks', BlockedUserViewSet, basename='block')
 
+from django.urls import re_path
+from django.views.static import serve
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/users/', include('users.urls')),
@@ -49,4 +52,5 @@ urlpatterns = [
     path('api/bookings/', include('bookings.urls')),
     path('api/core/parse-query/', ParseQueryView.as_view(), name='parse_query'),
     path('api/core/', include(router.urls)),
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
