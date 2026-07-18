@@ -69,13 +69,15 @@ export default function WorkerProfileView() {
             <Ionicons name="star" size={14} color="#FFC107" style={{ marginRight: 4 }} />
             <Text style={styles.ratingText}>{profile.rating.toFixed(1)}</Text>
           </View>
-          <Pressable
-            style={[styles.actionButton, { marginTop: 15, flexDirection: 'row', alignItems: 'center' }]}
-            onPress={() => (router.push as any)(`/ChatInbox/new?other_user_id=${profile.user.id}&name=${encodeURIComponent(profile.user.first_name + ' ' + profile.user.last_name)}`)}
-          >
-            <Ionicons name="chatbubble-ellipses" size={18} color="#ffffffff" style={{ marginRight: 6 }} />
-            <Text style={styles.actionButtonText}>Chat</Text>
-          </Pressable>
+          {user?.id !== profile.user.id && (
+            <Pressable
+              style={[styles.actionButton, { marginTop: 15, flexDirection: 'row', alignItems: 'center' }]}
+              onPress={() => (router.push as any)(`/ChatInbox/new?other_user_id=${profile.user.id}&name=${encodeURIComponent(profile.user.first_name + ' ' + profile.user.last_name)}`)}
+            >
+              <Ionicons name="chatbubble-ellipses" size={18} color="#ffffffff" style={{ marginRight: 6 }} />
+              <Text style={styles.actionButtonText}>Chat</Text>
+            </Pressable>
+          )}
         </View>
 
         <View style={styles.section}>
