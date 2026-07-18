@@ -142,7 +142,7 @@ export default function LoginScreen() {
                 )}
               />
 
-              <Pressable style={{ alignSelf: 'flex-end', marginBottom: 20, marginTop: -10 }} onPress={() => router.push('/ForgotPassword/reset')}>
+              <Pressable style={{ alignSelf: 'flex-end', marginBottom: 20, marginTop: -10 }} onPress={() => router.push({ pathname: '/ForgotPassword/[id]', params: { id: 'reset' } })}>
                 <Text style={{ color: '#FFC107', fontSize: 13, fontWeight: '600' }}>Forgot Password?</Text>
               </Pressable>
 
