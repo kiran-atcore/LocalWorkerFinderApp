@@ -5,7 +5,7 @@ from .views import (
     SwitchRoleView, DeleteAccountView, CustomerProfileView, 
     WorkerProfileDetailView, FeaturedWorkersView, GoogleLoginView, 
     VerifyOTPView, ResendOTPView, ReviewViewSet, DeviceTokenView, ResetDBView,
-    ForgotPasswordOTPView, ResetPasswordView
+    ForgotPasswordOTPView, ResetPasswordView, VerifyResetOTPView
 )
 
 app_name = 'users'
@@ -19,6 +19,7 @@ urlpatterns = [
     path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
     path('resend-otp/', ResendOTPView.as_view(), name='resend_otp'),
     path('forgot-password/', ForgotPasswordOTPView.as_view(), name='forgot_password'),
+    path('verify-reset-otp/', VerifyResetOTPView.as_view(), name='verify_reset_otp'),
     path('reset-password/', ResetPasswordView.as_view(), name='reset_password'),
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),

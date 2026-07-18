@@ -67,11 +67,31 @@ export default function ForgotPasswordScreen() {
     }
   };
 
-  const handleResetPassword = async () => {
+  const handleVerifyOTP = async () => {
     if (otp.length !== 6) {
       setError('Please enter a valid 6-digit OTP.');
       return;
     }
+    setLoading(true);
+    setError('');
+    
+    try {
+      await api.post('users/verify-reset-otp/', { email, otp_code: otp });
+      setStep(3);
+    } catch (err: any) {
+      const errMsg = err.response?.data?.error || 'Invalid OTP. Please try again.';
+      setError(errMsg);
+      if (errMsg.includes('Max attempts reached') || errMsg.includes('expired')) {
+        Alert.alert('Verification Failed', errMsg, [
+          { text: 'Try Again', onPress: () => setStep(1) }
+        ]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
     if (!newPassword || !confirmPassword) {
       setError('Please fill in all password fields.');
       return;
@@ -127,12 +147,14 @@ export default function ForgotPasswordScreen() {
           <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
             <View style={styles.header}>
               <Text style={styles.title}>
-                {step === 1 ? 'Forgot Password' : 'Reset Password'}
+                {step === 1 ? 'Forgot Password' : step === 2 ? 'Verify OTP' : 'Reset Password'}
               </Text>
               <Text style={styles.subtitle}>
                 {step === 1 
                   ? 'Enter your email ID to receive a verification code.' 
-                  : `Enter the code sent to ${email} and set your new password.`}
+                  : step === 2 
+                  ? `Enter the code sent to ${email}`
+                  : 'Set your new password.'}
               </Text>
             </View>
 
@@ -210,6 +232,29 @@ export default function ForgotPasswordScreen() {
                   )}
                 </View>
 
+                <TouchableOpacity 
+                  style={[styles.button, loading && styles.buttonDisabled]}
+                  onPress={handleVerifyOTP}
+                  disabled={loading}
+                >
+                  <LinearGradient
+                    colors={loading ? ['#7A6000', '#7A6000'] : ['#FFC107', '#FFB300']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.gradientButton}
+                  >
+                    {loading ? <ActivityIndicator color="#121212" /> : <Text style={styles.buttonText}>Verify OTP</Text>}
+                  </LinearGradient>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.backButton} onPress={() => setStep(1)}>
+                  <Text style={styles.backButtonText}>Use a different email</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {step === 3 && (
+              <View style={styles.formContainer}>
                 <View style={styles.inputContainer}>
                   <Text style={styles.inputLabel}>New Password</Text>
                   <TextInput
@@ -256,7 +301,7 @@ export default function ForgotPasswordScreen() {
                 </TouchableOpacity>
                 
                 <TouchableOpacity style={styles.backButton} onPress={() => setStep(1)}>
-                  <Text style={styles.backButtonText}>Use a different email</Text>
+                  <Text style={styles.backButtonText}>Cancel</Text>
                 </TouchableOpacity>
               </View>
             )}

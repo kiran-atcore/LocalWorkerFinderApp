@@ -469,6 +469,37 @@ class ForgotPasswordOTPView(views.APIView):
 
         return Response({"message": "OTP sent to email.", "email": email}, status=status.HTTP_200_OK)
 
+class VerifyResetOTPView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        otp_code = request.data.get('otp_code')
+
+        if not email or not otp_code:
+            return Response({"error": "Email and OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            otp_record = EmailOTP.objects.get(email=email)
+        except EmailOTP.DoesNotExist:
+            return Response({"error": "No OTP found for this email."}, status=status.HTTP_404_NOT_FOUND)
+
+        if otp_record.registration_data.get("purpose") != "reset_password":
+            return Response({"error": "Invalid OTP purpose."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if otp_record.is_expired():
+            return Response({"error": "OTP has expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if str(otp_record.otp_code) != str(otp_code):
+            otp_record.attempts += 1
+            otp_record.save()
+            if otp_record.attempts >= 3:
+                otp_record.delete()
+                return Response({"error": "Max attempts reached. Please request a new OTP."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"Invalid OTP. {3 - otp_record.attempts} attempts remaining."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"message": "OTP verified successfully."}, status=status.HTTP_200_OK)
+
 class ResetPasswordView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
