@@ -31,23 +31,44 @@ interface AuthState {
   setBookingLocation: (loc: { latitude: number, longitude: number, address_text: string } | null) => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  isAuthenticated: false,
-  user: null,
-  isLoading: true, // Initially true while we check session
-  isLocationLoading: false,
-  activeRole: 'customer',
-  hasAutoDetectedLocationSession: false,
-  searchLocation: null,
-  pendingWorkerLocation: null,
-  bookingLocation: null,
-  setAuth: (user) => set({ isAuthenticated: true, user, isLoading: false }),
-  clearAuth: () => set({ isAuthenticated: false, user: null, isLoading: false, isLocationLoading: false, activeRole: 'customer', hasAutoDetectedLocationSession: false, searchLocation: null, pendingWorkerLocation: null, bookingLocation: null }),
-  setLoading: (loading) => set({ isLoading: loading }),
-  setIsLocationLoading: (loading) => set({ isLocationLoading: loading }),
-  setActiveRole: (role) => set({ activeRole: role }),
-  setHasAutoDetectedLocationSession: (val) => set({ hasAutoDetectedLocationSession: val }),
-  setSearchLocation: (loc) => set({ searchLocation: loc }),
-  setPendingWorkerLocation: (loc) => set({ pendingWorkerLocation: loc }),
-  setBookingLocation: (loc) => set({ bookingLocation: loc }),
-}));
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      isAuthenticated: false,
+      user: null,
+      isLoading: true, // Start true until AsyncStorage hydration is complete
+      isLocationLoading: false,
+      activeRole: 'customer',
+      hasAutoDetectedLocationSession: false,
+      searchLocation: null,
+      pendingWorkerLocation: null,
+      bookingLocation: null,
+      setAuth: (user) => set({ isAuthenticated: true, user, isLoading: false }),
+      clearAuth: () => set({ isAuthenticated: false, user: null, isLoading: false, isLocationLoading: false, activeRole: 'customer', hasAutoDetectedLocationSession: false, searchLocation: null, pendingWorkerLocation: null, bookingLocation: null }),
+      setLoading: (loading) => set({ isLoading: loading }),
+      setIsLocationLoading: (loading) => set({ isLocationLoading: loading }),
+      setActiveRole: (role) => set({ activeRole: role }),
+      setHasAutoDetectedLocationSession: (val) => set({ hasAutoDetectedLocationSession: val }),
+      setSearchLocation: (loc) => set({ searchLocation: loc }),
+      setPendingWorkerLocation: (loc) => set({ pendingWorkerLocation: loc }),
+      setBookingLocation: (loc) => set({ bookingLocation: loc }),
+    }),
+    {
+      name: 'auth-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state) => {
+        // Hydration is complete, remove splash screen
+        state?.setLoading(false);
+      },
+      partialize: (state) => ({ 
+        isAuthenticated: state.isAuthenticated, 
+        user: state.user, 
+        activeRole: state.activeRole,
+        searchLocation: state.searchLocation
+      }),
+    }
+  )
+);

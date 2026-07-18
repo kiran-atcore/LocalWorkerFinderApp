@@ -2,12 +2,11 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 
 const getBaseUrl = () => {
-  // Use EXPO_PUBLIC_API_URL if defined (e.g. for production cloud server)
+  // Use EXPO_PUBLIC_API_URL if defined, otherwise default to the Render cloud backend
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL;
   }
-  // Fallback to computer's LAN IP for local physical device testing
-  return 'http://172.30.182.203:8000/api/';
+  return 'https://vicinio-localworkerfinderapp.onrender.com/api/';
 };
 
 export const getImageUrl = (path: string | null | undefined) => {
@@ -45,6 +44,11 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      // Import the store dynamically to avoid circular dependency
+      const { useAuthStore } = require('../store/useAuthStore');
+      useAuthStore.getState().clearAuth();
+    }
     return Promise.reject(error);
   }
 );

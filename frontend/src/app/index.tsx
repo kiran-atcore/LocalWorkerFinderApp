@@ -29,34 +29,7 @@ export default function RootIndex() {
     ]).start();
   }, []);
 
-  useEffect(() => {
-    let isMounted = true;
-    
-    const checkSession = async () => {
-      try {
-        const response = await api.get('users/session/');
-        if (response.data.isAuthenticated && isMounted) {
-          setAuth(response.data.user);
-        } else if (isMounted) {
-          clearAuth();
-        }
-      } catch (error) {
-        if (isMounted) {
-           clearAuth();
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    checkSession();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  // Session checking is now handled via Zustand persist and Axios interceptors
 
   useEffect(() => {
     // Once loading is finished, navigate depending on auth state
