@@ -179,86 +179,109 @@ export default function RadarMapPage() {
   }, [items, parsedQuery, radius, isRadiusEnabled, center, maxRate, minRate, minRating, minExp]);
 
   const generateMarkersScript = (itemsToRender: any[]) => {
-    // Keep track of coordinates to slightly offset overlapping markers (e.g. multiple jobs from same client)
-    const coordCounts: Record<string, number> = {};
+    // 1. Group items by exact coordinates
+    const grouped: Record<string, any[]> = {};
+    itemsToRender.filter(i => i.latitude && i.longitude).forEach(item => {
+      const lat = parseFloat(item.latitude).toFixed(5);
+      const lng = parseFloat(item.longitude).toFixed(5);
+      const key = `${lat},${lng}`;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(item);
+    });
 
-    return itemsToRender.filter(i => i.latitude && i.longitude).map((item) => {
-      let lat = parseFloat(item.latitude);
-      let lng = parseFloat(item.longitude);
+    return Object.keys(grouped).map((key, groupIndex) => {
+      const group = grouped[key];
+      const lat = parseFloat(group[0].latitude);
+      const lng = parseFloat(group[0].longitude);
+      const isMulti = group.length > 1;
+
+      let popupHtml = '<div class="popup-container" style="max-height: 250px; overflow-y: auto;">';
       
-      // Calculate offset for identical coordinates
-      const coordKey = `${lat.toFixed(5)},${lng.toFixed(5)}`;
-      const count = coordCounts[coordKey] || 0;
-      
-      if (count > 0) {
-        // Create a small spiral/cross offset (~20 meters) so they don't completely overlap
-        const offset = 0.0002 * Math.ceil(count / 4);
-        if (count % 4 === 1) lat += offset;
-        else if (count % 4 === 2) lng += offset;
-        else if (count % 4 === 3) lat -= offset;
-        else lng -= offset;
+      if (isMulti) {
+        popupHtml += `<div style="font-weight:bold; margin-bottom:12px; border-bottom:1px solid #ddd; padding-bottom:6px; color:#555;">${group.length} items at this location</div>`;
       }
-      coordCounts[coordKey] = count + 1;
-      
-      let title = '';
-      let subtitleHtml = '';
+
+      group.forEach((item, index) => {
+        let title = '';
+        let subtitleHtml = '';
+        let targetId = item.id;
+        let isApplied = false;
+
+        if (id === 'workers') {
+          const firstName = item.user?.first_name || '';
+          const lastName = item.user?.last_name || '';
+          const fullName = `${firstName} ${lastName}`.trim();
+          title = item.business_name || fullName || item.user?.username || 'Worker';
+          
+          const categories = item.categories || [];
+          if (categories.length > 0) {
+            const top2 = categories.slice(0, 2);
+            const capsules = top2.map((c: string) => `<span class="capsule">${c.replace(/'/g, "\\'")}</span>`).join('');
+            const more = categories.length > 2 ? `<span class="capsule-more">...</span>` : '';
+            subtitleHtml = `<div class="capsule-container">${capsules}${more}</div>`;
+          }
+          targetId = item.user?.id || item.id;
+        } else {
+          title = item.title;
+          subtitleHtml = `<div class="capsule-container"><span class="capsule-job">$${item.remuneration}</span></div>`;
+          targetId = item.id;
+          isApplied = item.has_applied === true;
+        }
+
+        if (isApplied) {
+          subtitleHtml += `<div style="text-align:left; margin-top:4px;"><div class="applied-badge" style="display:inline-block;">✓ Applied</div></div>`;
+        }
+
+        const borderStyle = index < group.length - 1 ? 'border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 12px;' : 'padding-bottom: 4px;';
+
+        popupHtml += `
+          <div style="${borderStyle}">
+            <b style="font-size:14px;">${title.replace(/'/g, "\\'")}</b>
+            ${subtitleHtml}
+            <button class="btn" style="margin-top:8px; width:100%;" onclick="postMessageToRN(${targetId})">View Details</button>
+          </div>
+        `;
+      });
+      popupHtml += '</div>';
+
+      // Pin Visuals (use the first item's image/emoji for the pin itself)
       let imageUrl = '';
       let defaultEmoji = '';
-      let targetId = item.id;
-      let isApplied = false;
-
+      let anyApplied = false;
+      const firstItem = group[0];
+      
       if (id === 'workers') {
-        const firstName = item.user?.first_name || '';
-        const lastName = item.user?.last_name || '';
-        const fullName = `${firstName} ${lastName}`.trim();
-        title = item.business_name || fullName || item.user?.username || 'Worker';
-        
-        const categories = item.categories || [];
-        if (categories.length > 0) {
-          const top2 = categories.slice(0, 2);
-          const capsules = top2.map((c: string) => `<span class="capsule">${c.replace(/'/g, "\\'")}</span>`).join('');
-          const more = categories.length > 2 ? `<span class="capsule-more">...</span>` : '';
-          subtitleHtml = `<div class="capsule-container">${capsules}${more}</div>`;
-        }
-        
-        targetId = item.user?.id || item.id;
-        imageUrl = item.profile_photo ? (item.profile_photo.startsWith('http') ? item.profile_photo : `http://10.0.2.2:8000${item.profile_photo}`) : '';
+        imageUrl = firstItem.profile_photo ? (firstItem.profile_photo.startsWith('http') ? firstItem.profile_photo : `http://10.0.2.2:8000${firstItem.profile_photo}`) : '';
         defaultEmoji = '👷';
       } else {
-        title = item.title;
-        subtitleHtml = `<div class="capsule-container"><span class="capsule-job">$${item.remuneration}</span></div>`;
-        
-        let rawImageUrl = item.customer_details?.profile_photo || '';
+        let rawImageUrl = firstItem.customer_details?.profile_photo || '';
         imageUrl = rawImageUrl ? (rawImageUrl.startsWith('http') ? rawImageUrl : `http://10.0.2.2:8000${rawImageUrl}`) : '';
         defaultEmoji = '💼';
-        targetId = item.id;
-        isApplied = item.has_applied === true;
-      }
-
-      if (isApplied) {
-        subtitleHtml += `<div style="text-align:center;"><div class="applied-badge">✓ Applied</div></div>`;
+        anyApplied = group.some(i => i.has_applied === true);
       }
 
       const pinContent = imageUrl 
         ? `<img src="${imageUrl}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" />`
         : `<div class="pin">${defaultEmoji}</div>`;
         
-      const pinClass = isApplied ? "pin-container pin-applied" : "pin-container";
+      const pinClass = anyApplied ? "pin-container pin-applied" : "pin-container";
+      
+      const badgeHtml = isMulti ? `<div style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:10px; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; border:2px solid white;">${group.length}</div>` : '';
 
       return `
-        var popupContent_${item.id} = '<div class="popup-container"><b>${title.replace(/'/g, "\\'")}</b>${subtitleHtml}<button class="btn" onclick="postMessageToRN(${targetId})">View Details</button></div>';
+        var popupContent_${groupIndex} = '${popupHtml}';
         
-        var icon_${item.id} = L.divIcon({
-          html: '<div class="${pinClass}">${pinContent}</div>',
+        var icon_${groupIndex} = L.divIcon({
+          html: '<div style="position:relative;"><div class="${pinClass}">${pinContent}</div>${badgeHtml}</div>',
           className: 'custom-marker',
           iconSize: [40, 40],
           iconAnchor: [20, 40],
           popupAnchor: [0, -40]
         });
 
-        var m_${item.id} = L.marker([${lat}, ${lng}], { icon: icon_${item.id} }).bindPopup(popupContent_${item.id});
-        m_${item.id}.addTo(map);
-        window.markers.push(m_${item.id});
+        var m_${groupIndex} = L.marker([${lat}, ${lng}], { icon: icon_${groupIndex} }).bindPopup(popupContent_${groupIndex});
+        m_${groupIndex}.addTo(map);
+        window.markers.push(m_${groupIndex});
       `;
     }).join('\n');
   };
