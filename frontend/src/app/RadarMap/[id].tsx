@@ -234,9 +234,10 @@ export default function RadarMapPage() {
 
         const borderStyle = index < group.length - 1 ? 'border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 12px;' : 'padding-bottom: 4px;';
 
+        // Do not escape single quotes here, we will escape the entire HTML string below
         popupHtml += `
           <div style="${borderStyle}">
-            <b style="font-size:14px;">${title.replace(/'/g, "\\'")}</b>
+            <b style="font-size:14px;">${title}</b>
             ${subtitleHtml}
             <button class="btn" style="margin-top:8px; width:100%;" onclick="postMessageToRN(${targetId})">View Details</button>
           </div>
@@ -268,8 +269,11 @@ export default function RadarMapPage() {
       
       const badgeHtml = isMulti ? `<div style="position:absolute; top:-5px; right:-5px; background:red; color:white; border-radius:10px; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; border:2px solid white;">${group.length}</div>` : '';
 
+      // Safely escape the HTML for injection into a single-quote JavaScript string
+      const safePopupHtml = popupHtml.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '').replace(/\r/g, '');
+
       return `
-        var popupContent_${groupIndex} = '${popupHtml}';
+        var popupContent_${groupIndex} = '${safePopupHtml}';
         
         var icon_${groupIndex} = L.divIcon({
           html: '<div style="position:relative;"><div class="${pinClass}">${pinContent}</div>${badgeHtml}</div>',
