@@ -142,6 +142,10 @@ export default function LoginScreen() {
                 )}
               />
 
+              <Pressable style={{ alignSelf: 'flex-end', marginBottom: 20, marginTop: -10 }} onPress={() => router.push('/ForgotPassword/reset')}>
+                <Text style={{ color: '#FFC107', fontSize: 13, fontWeight: '600' }}>Forgot Password?</Text>
+              </Pressable>
+
               <Animated.View style={{ transform: [{ scale: buttonScale }], marginTop: 20 }}>
                 <Pressable
                   onPressIn={handlePressIn}

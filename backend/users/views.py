@@ -433,6 +433,78 @@ class ReviewViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You do not have permission to delete this review.")
         instance.delete()
 from django.db import connection
+from django.core.mail import send_mail
+
+class ForgotPasswordOTPView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        if not email:
+            return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not User.objects.filter(email=email).exists():
+            return Response({"error": "No account found with this email."}, status=status.HTTP_404_NOT_FOUND)
+
+        otp = str(random.randint(100000, 999999))
+
+        EmailOTP.objects.filter(email=email).delete()
+        EmailOTP.objects.create(
+            email=email,
+            otp_code=otp,
+            registration_data={"purpose": "reset_password"},
+            attempts=0
+        )
+
+        try:
+            send_mail(
+                subject='Password Reset OTP',
+                message=f'Your password reset code is {otp}. This code will expire in 4 minutes.',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            print(f"Failed to send email: {e}")
+
+        return Response({"message": "OTP sent to email.", "email": email}, status=status.HTTP_200_OK)
+
+class ResetPasswordView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        otp_code = request.data.get('otp_code')
+        new_password = request.data.get('new_password')
+
+        if not email or not otp_code or not new_password:
+            return Response({"error": "Email, OTP, and new password are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            otp_record = EmailOTP.objects.get(email=email)
+        except EmailOTP.DoesNotExist:
+            return Response({"error": "No OTP found for this email."}, status=status.HTTP_404_NOT_FOUND)
+
+        if otp_record.registration_data.get("purpose") != "reset_password":
+            return Response({"error": "Invalid OTP purpose."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if otp_record.is_expired():
+            return Response({"error": "OTP has expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if str(otp_record.otp_code) != str(otp_code):
+            otp_record.attempts += 1
+            otp_record.save()
+            if otp_record.attempts >= 3:
+                otp_record.delete()
+                return Response({"error": "Max attempts reached. Please request a new OTP."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"Invalid OTP. {3 - otp_record.attempts} attempts remaining."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.get(email=email)
+        user.set_password(new_password)
+        user.save()
+        otp_record.delete()
+
+        return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
 
 class ResetDBView(views.APIView):
     permission_classes = [permissions.AllowAny]

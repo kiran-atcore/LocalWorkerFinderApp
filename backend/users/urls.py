@@ -4,7 +4,8 @@ from .views import (
     RegisterView, LoginView, LogoutView, SessionCheckView, CSRFTokenView, 
     SwitchRoleView, DeleteAccountView, CustomerProfileView, 
     WorkerProfileDetailView, FeaturedWorkersView, GoogleLoginView, 
-    VerifyOTPView, ResendOTPView, ReviewViewSet, DeviceTokenView, ResetDBView
+    VerifyOTPView, ResendOTPView, ReviewViewSet, DeviceTokenView, ResetDBView,
+    ForgotPasswordOTPView, ResetPasswordView
 )
 
 app_name = 'users'
@@ -17,6 +18,8 @@ urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
     path('resend-otp/', ResendOTPView.as_view(), name='resend_otp'),
+    path('forgot-password/', ForgotPasswordOTPView.as_view(), name='forgot_password'),
+    path('reset-password/', ResetPasswordView.as_view(), name='reset_password'),
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('session/', SessionCheckView.as_view(), name='session_check'),
