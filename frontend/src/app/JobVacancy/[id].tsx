@@ -74,7 +74,7 @@ export default function JobVacancyDetail() {
   );
 
   return (
-    <SafeAreaView edges={['top']} style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.replace('/(tabs)/home')} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#FFC107" />

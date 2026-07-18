@@ -236,7 +236,7 @@ export default function LocationSetUp() {
 
   if (loading || !coords) {
     return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <SafeAreaView style={styles.center}>
         <ActivityIndicator size="large" color="#FFC107" />
         <Text style={{marginTop: 10, color: '#A0A0A0'}}>Loading Map...</Text>
@@ -246,7 +246,7 @@ export default function LocationSetUp() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <SafeAreaView edges={['top']} style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>

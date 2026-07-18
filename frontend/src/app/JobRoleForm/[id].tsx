@@ -75,7 +75,7 @@ export default function JobRoleFormScreen() {
 
   if (isLoading) {
     return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <SafeAreaView style={styles.center}>
         <ActivityIndicator size="large" color="#FFC107" />
       </SafeAreaView>
@@ -84,7 +84,7 @@ export default function JobRoleFormScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: '#121212' }}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>

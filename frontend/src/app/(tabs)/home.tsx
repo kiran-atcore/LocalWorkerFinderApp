@@ -586,7 +586,7 @@ function WorkerHomeScreen() {
 export default function HomeScreen() {
   const activeRole = useAuthStore((state) => state.activeRole);
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#121212' }}>
       {activeRole === 'worker' ? <WorkerHomeScreen /> : <CustomerHomeScreen />}
     </SafeAreaView>

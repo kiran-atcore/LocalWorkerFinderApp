@@ -14,7 +14,11 @@ export default function TabsLayout() {
       try {
         const res = await api.get(`/core/conversations/unread_count/?role=${activeRole}`);
         setUnreadCount(res.data.unread_count);
-      } catch (err) {
+      } catch (err: any) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          // Silently ignore auth errors when session is ending or deleted
+          return;
+        }
         console.error('Failed to fetch unread count', err);
       }
     };

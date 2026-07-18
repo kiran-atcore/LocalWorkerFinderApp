@@ -36,8 +36,8 @@ export default function ProfileScreen() {
               await api.delete('users/delete-account/');
               clearAuth();
               router.replace('/(auth)/login');
-            } catch (error) {
-              console.error('Delete account failed:', error);
+            } catch (error: any) {
+              console.error('Delete account failed:', error?.response?.data?.details || error.message);
               Alert.alert('Error', 'Failed to delete account.');
             }
           }
