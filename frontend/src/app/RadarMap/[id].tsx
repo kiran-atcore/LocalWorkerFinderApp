@@ -179,9 +179,26 @@ export default function RadarMapPage() {
   }, [items, parsedQuery, radius, isRadiusEnabled, center, maxRate, minRate, minRating, minExp]);
 
   const generateMarkersScript = (itemsToRender: any[]) => {
+    // Keep track of coordinates to slightly offset overlapping markers (e.g. multiple jobs from same client)
+    const coordCounts: Record<string, number> = {};
+
     return itemsToRender.filter(i => i.latitude && i.longitude).map((item) => {
-      const lat = parseFloat(item.latitude);
-      const lng = parseFloat(item.longitude);
+      let lat = parseFloat(item.latitude);
+      let lng = parseFloat(item.longitude);
+      
+      // Calculate offset for identical coordinates
+      const coordKey = `${lat.toFixed(5)},${lng.toFixed(5)}`;
+      const count = coordCounts[coordKey] || 0;
+      
+      if (count > 0) {
+        // Create a small spiral/cross offset (~20 meters) so they don't completely overlap
+        const offset = 0.0002 * Math.ceil(count / 4);
+        if (count % 4 === 1) lat += offset;
+        else if (count % 4 === 2) lng += offset;
+        else if (count % 4 === 3) lat -= offset;
+        else lng -= offset;
+      }
+      coordCounts[coordKey] = count + 1;
       
       let title = '';
       let subtitleHtml = '';
