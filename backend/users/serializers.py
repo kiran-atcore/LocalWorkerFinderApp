@@ -5,14 +5,20 @@ from .models import CustomerProfile
 
 class UserSerializer(serializers.ModelSerializer):
     has_worker_profile = serializers.SerializerMethodField()
+    worker_profile_status = serializers.SerializerMethodField()
     profile_photo = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'has_worker_profile', 'profile_photo', 'is_staff', 'is_superuser']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'has_worker_profile', 'worker_profile_status', 'profile_photo', 'is_staff', 'is_superuser']
 
     def get_has_worker_profile(self, obj):
         return hasattr(obj, 'worker_profile')
+        
+    def get_worker_profile_status(self, obj):
+        if hasattr(obj, 'worker_profile'):
+            return obj.worker_profile.verification_status
+        return None
 
     def get_profile_photo(self, obj):
         if hasattr(obj, 'worker_profile') and obj.worker_profile.profile_photo:
