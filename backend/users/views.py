@@ -476,6 +476,56 @@ class ReviewWorkerRequestView(views.APIView):
             
         profile.save()
         return Response({"message": f"Worker profile {profile.verification_status} successfully."})
+
+class BannedWorkersView(views.APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request, *args, **kwargs):
+        from .models import PermanentlyRejectedEmail
+        from django.contrib.auth.models import User
+        banned_records = PermanentlyRejectedEmail.objects.all()
+        data = []
+        for record in banned_records:
+            user = User.objects.filter(email=record.email).first()
+            if user:
+                data.append({
+                    "id": record.id,
+                    "email": record.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "user_id": user.id
+                })
+            else:
+                data.append({
+                    "id": record.id,
+                    "email": record.email,
+                    "first_name": "Deleted",
+                    "last_name": "User",
+                    "user_id": None
+                })
+        return Response(data)
+
+class UnbanWorkerView(views.APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        if not email:
+            return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        from .models import PermanentlyRejectedEmail
+        PermanentlyRejectedEmail.objects.filter(email=email).delete()
+        
+        # Reset worker profile if it exists
+        from django.contrib.auth.models import User
+        user = User.objects.filter(email=email).first()
+        if user and hasattr(user, 'worker_profile'):
+            profile = user.worker_profile
+            profile.rejection_count = 0
+            profile.verification_status = 'pending'
+            profile.save()
+            
+        return Response({"message": f"{email} has been unbanned successfully."})
 class ForgotPasswordOTPView(views.APIView):
     permission_classes = [permissions.AllowAny]
 

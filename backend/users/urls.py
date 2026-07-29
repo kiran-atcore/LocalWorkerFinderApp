@@ -6,7 +6,7 @@ from .views import (
     WorkerProfileDetailView, FeaturedWorkersView, GoogleLoginView, 
     VerifyOTPView, ResendOTPView, ReviewViewSet, DeviceTokenView, ResetDBView,
     ForgotPasswordOTPView, ResetPasswordView, VerifyResetOTPView,
-    PendingWorkerRequestsView, ReviewWorkerRequestView
+    PendingWorkerRequestsView, ReviewWorkerRequestView, BannedWorkersView, UnbanWorkerView
 )
 
 app_name = 'users'
@@ -33,8 +33,11 @@ urlpatterns = [
     path('worker-profile/<int:id>/', WorkerProfileDetailView.as_view(), name='worker_profile_detail'),
     path('workers/featured/', FeaturedWorkersView.as_view(), name='featured_workers'),
     
+    # Admin Routes
     path('admin/pending-workers/', PendingWorkerRequestsView.as_view(), name='pending_workers'),
     path('admin/review-worker/', ReviewWorkerRequestView.as_view(), name='review_worker'),
+    path('admin/banned-workers/', BannedWorkersView.as_view(), name='banned_workers'),
+    path('admin/unban-worker/', UnbanWorkerView.as_view(), name='unban_worker'),
 
     path('forgot-password/', ForgotPasswordOTPView.as_view(), name='forgot_password'),
     path('verify-reset-otp/', VerifyResetOTPView.as_view(), name='verify_reset_otp'),

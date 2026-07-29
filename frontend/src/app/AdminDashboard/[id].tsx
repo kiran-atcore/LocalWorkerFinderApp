@@ -11,6 +11,8 @@ export default function AdminDashboard() {
   const router = useRouter();
   const { user, clearAuth } = useAuthStore();
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [bannedWorkers, setBannedWorkers] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'pending' | 'banned'>('pending');
   const [isLoading, setIsLoading] = useState(true);
 
   useFocusEffect(
@@ -20,7 +22,11 @@ export default function AdminDashboard() {
       }
       
       if (user.is_staff) {
-        fetchPendingRequests();
+        if (activeTab === 'pending') {
+          fetchPendingRequests();
+        } else {
+          fetchBannedWorkers();
+        }
       } else {
         Alert.alert('Unauthorized', 'You are not authorized to view this page.');
         if (router.canGoBack()) {
@@ -29,7 +35,7 @@ export default function AdminDashboard() {
           router.replace('/(auth)/login' as any);
         }
       }
-    }, [user])
+    }, [user, activeTab])
   );
 
   const handleLogout = async () => {
@@ -45,12 +51,39 @@ export default function AdminDashboard() {
 
   const fetchPendingRequests = async () => {
     try {
+      setIsLoading(true);
       const response = await api.get('users/admin/pending-workers/');
       setPendingRequests(response.data);
     } catch (error) {
       console.error('Error fetching pending requests:', error);
       Alert.alert('Error', 'Failed to fetch pending worker requests.');
     } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchBannedWorkers = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get('users/admin/banned-workers/');
+      setBannedWorkers(response.data);
+    } catch (error) {
+      console.error('Error fetching banned workers:', error);
+      Alert.alert('Error', 'Failed to fetch banned workers.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUnban = async (email: string) => {
+    try {
+      setIsLoading(true);
+      await api.post('users/admin/unban-worker/', { email });
+      Alert.alert('Success', `${email} has been unbanned.`);
+      fetchBannedWorkers();
+    } catch (error) {
+      console.error('Error unbanning worker:', error);
+      Alert.alert('Error', 'Failed to unban worker.');
       setIsLoading(false);
     }
   };
@@ -119,28 +152,98 @@ export default function AdminDashboard() {
           </Pressable>
         </View>
 
+        <View style={styles.tabContainer}>
+          <Pressable
+            style={[styles.tab, activeTab === 'pending' && styles.activeTab]}
+            onPress={() => setActiveTab('pending')}
+          >
+            <Text style={[styles.tabText, activeTab === 'pending' && styles.activeTabText]}>Pending Requests</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.tab, activeTab === 'banned' && styles.activeTab]}
+            onPress={() => setActiveTab('banned')}
+          >
+            <Text style={[styles.tabText, activeTab === 'banned' && styles.activeTabText]}>Banned Workers</Text>
+          </Pressable>
+        </View>
+
         <View style={styles.content}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Verification Queue</Text>
-            <View style={styles.countBadge}>
-              <Text style={styles.countBadgeText}>{pendingRequests.length}</Text>
-            </View>
-          </View>
-          
-          {pendingRequests.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="shield-checkmark-outline" size={80} color="#333333" />
-              <Text style={styles.emptyTitle}>All Caught Up!</Text>
-              <Text style={styles.emptyText}>There are no pending worker verification requests at this time.</Text>
-            </View>
+          {activeTab === 'pending' ? (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Verification Queue</Text>
+                <View style={styles.countBadge}>
+                  <Text style={styles.countBadgeText}>{pendingRequests.length}</Text>
+                </View>
+              </View>
+              
+              {pendingRequests.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="shield-checkmark-outline" size={80} color="#333333" />
+                  <Text style={styles.emptyTitle}>All Caught Up!</Text>
+                  <Text style={styles.emptyText}>There are no pending worker verification requests at this time.</Text>
+                </View>
+              ) : (
+                <FlatList
+                  data={pendingRequests}
+                  keyExtractor={(item) => item.id.toString()}
+                  renderItem={renderItem}
+                  contentContainerStyle={styles.listContainer}
+                  showsVerticalScrollIndicator={false}
+                />
+              )}
+            </>
           ) : (
-            <FlatList
-              data={pendingRequests}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={renderItem}
-              contentContainerStyle={styles.listContainer}
-              showsVerticalScrollIndicator={false}
-            />
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Banned Workers</Text>
+                <View style={styles.countBadge}>
+                  <Text style={styles.countBadgeText}>{bannedWorkers.length}</Text>
+                </View>
+              </View>
+              
+              {bannedWorkers.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="shield-checkmark-outline" size={80} color="#333333" />
+                  <Text style={styles.emptyTitle}>No Banned Workers</Text>
+                  <Text style={styles.emptyText}>There are no permanently banned workers at this time.</Text>
+                </View>
+              ) : (
+                <FlatList
+                  data={bannedWorkers}
+                  keyExtractor={(item) => item.id.toString()}
+                  renderItem={({ item }) => (
+                    <View style={styles.card}>
+                      <View style={styles.cardLeft}>
+                        <View style={styles.avatarPlaceholder}>
+                          <Ionicons name="person-circle-outline" size={28} color="#FF6B6B" />
+                        </View>
+                        <View style={styles.userInfo}>
+                          <Text style={styles.userName}>{item.first_name} {item.last_name}</Text>
+                          <View style={styles.emailContainer}>
+                            <Ionicons name="mail-outline" size={14} color="#A0A0A0" style={{ marginRight: 4 }} />
+                            <Text style={styles.email} numberOfLines={1}>{item.email}</Text>
+                          </View>
+                        </View>
+                      </View>
+                      <Pressable 
+                        style={styles.unbanButton}
+                        onPress={() => {
+                          Alert.alert('Confirm Unban', `Are you sure you want to unban ${item.email}? They will get their 3 attempts back.`, [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Unban', onPress: () => handleUnban(item.email) }
+                          ])
+                        }}
+                      >
+                        <Text style={styles.unbanButtonText}>Unban</Text>
+                      </Pressable>
+                    </View>
+                  )}
+                  contentContainerStyle={styles.listContainer}
+                  showsVerticalScrollIndicator={false}
+                />
+              )}
+            </>
           )}
         </View>
       </SafeAreaView>
@@ -327,5 +430,42 @@ const styles = StyleSheet.create({
     color: '#A0A0A0',
     textAlign: 'center',
     lineHeight: 22,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 10,
+    marginTop: 5,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: '#333333',
+  },
+  activeTab: {
+    borderBottomColor: '#FFC107',
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#888888',
+  },
+  activeTabText: {
+    color: '#FFC107',
+  },
+  unbanButton: {
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 107, 0.3)',
+  },
+  unbanButtonText: {
+    color: '#FF6B6B',
+    fontSize: 13,
+    fontWeight: 'bold',
   },
 });
