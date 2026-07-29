@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   skillChipMore: { backgroundColor: '#333333', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
   skillChipTextMore: { color: '#A0A0A0', fontSize: 12, fontWeight: '600' },
   noSkillsText: { color: '#A0A0A0', fontSize: 13, fontStyle: 'italic' },
-  bottomContainer: { position: 'absolute', bottom: 20, left: 20, right: 20 },
+  bottomContainer: { position: 'absolute', bottom: 40, left: 20, right: 20 },
   postButton: { backgroundColor: '#FFC107', padding: 16, borderRadius: 30, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
   postButtonText: { color: '#121212', fontSize: 16, fontWeight: 'bold' },
 });

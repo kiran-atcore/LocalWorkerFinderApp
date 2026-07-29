@@ -33,6 +33,13 @@ export default function TabsLayout() {
       headerShown: false,
       tabBarStyle: {
         backgroundColor: '#1E1E1E',
+        height: 85,
+        paddingBottom: 35,
+        paddingTop: 8,
+      },
+      tabBarLabelStyle: {
+        paddingBottom: 0,
+        fontSize: 12,
       },
       tabBarActiveTintColor: '#FFC107',
       tabBarInactiveTintColor: '#A0A0A0',

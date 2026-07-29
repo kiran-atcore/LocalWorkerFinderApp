@@ -382,6 +382,7 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: '#121212',
     padding: 15,
+    paddingBottom: 35,
     borderTopWidth: 1,
     borderTopColor: '#2A2A2A',
     shadowColor: '#000',

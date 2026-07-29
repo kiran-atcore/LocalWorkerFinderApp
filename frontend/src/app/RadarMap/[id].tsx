@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
   },
   radarOverlay: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 50,
     alignSelf: 'center',
     backgroundColor: '#FFC107',
     paddingHorizontal: 20,

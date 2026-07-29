@@ -5,7 +5,8 @@ from .views import (
     SwitchRoleView, DeleteAccountView, CustomerProfileView, 
     WorkerProfileDetailView, FeaturedWorkersView, GoogleLoginView, 
     VerifyOTPView, ResendOTPView, ReviewViewSet, DeviceTokenView, ResetDBView,
-    ForgotPasswordOTPView, ResetPasswordView, VerifyResetOTPView
+    ForgotPasswordOTPView, ResetPasswordView, VerifyResetOTPView,
+    PendingWorkerRequestsView, ReviewWorkerRequestView
 )
 
 app_name = 'users'
@@ -18,20 +19,26 @@ urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
     path('resend-otp/', ResendOTPView.as_view(), name='resend_otp'),
+    path('login/', LoginView.as_view(), name='login'),
+    path('google-login/', GoogleLoginView.as_view(), name='google_login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('session/', SessionCheckView.as_view(), name='session_check'),
+    path('csrf/', CSRFTokenView.as_view(), name='csrf_token'),
+    path('switch-role/', SwitchRoleView.as_view(), name='switch_role'),
+    path('delete-account/', DeleteAccountView.as_view(), name='delete_account'),
+    
+    path('customer-profile/', CustomerProfileView.as_view(), name='customer_profile'),
+    
+    path('worker-profile/', WorkerProfileDetailView.as_view(), name='worker_profile_self'),
+    path('worker-profile/<int:id>/', WorkerProfileDetailView.as_view(), name='worker_profile_detail'),
+    path('workers/featured/', FeaturedWorkersView.as_view(), name='featured_workers'),
+    
+    path('admin/pending-workers/', PendingWorkerRequestsView.as_view(), name='pending_workers'),
+    path('admin/review-worker/', ReviewWorkerRequestView.as_view(), name='review_worker'),
+
     path('forgot-password/', ForgotPasswordOTPView.as_view(), name='forgot_password'),
     path('verify-reset-otp/', VerifyResetOTPView.as_view(), name='verify_reset_otp'),
     path('reset-password/', ResetPasswordView.as_view(), name='reset_password'),
-    path('login/', LoginView.as_view(), name='login'),
-    path('logout/', LogoutView.as_view(), name='logout'),
-    path('session/', SessionCheckView.as_view(), name='session_check'),
-    path('csrf/', CSRFTokenView.as_view(), name='csrf_cookie'),
-    path('switch-role/', SwitchRoleView.as_view(), name='switch_role'),
     path('device-token/', DeviceTokenView.as_view(), name='device_token'),
-    path('delete-account/', DeleteAccountView.as_view(), name='delete_account'),
-    path('customer-profile/', CustomerProfileView.as_view(), name='customer_profile'),
-    path('worker-profile/', WorkerProfileDetailView.as_view(), name='worker_profile_self'),
-    path('worker-profile/<int:id>/', WorkerProfileDetailView.as_view(), name='worker_profile_detail'),
-    path('featured-workers/', FeaturedWorkersView.as_view(), name='featured_workers'),
-    path('google-login/', GoogleLoginView.as_view(), name='google_login'),
     path('reset-db/', ResetDBView.as_view(), name='reset_db'),
 ]

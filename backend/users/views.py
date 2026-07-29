@@ -238,20 +238,15 @@ class SwitchRoleView(views.APIView):
         role = request.data.get('role')
 
         if role == 'worker':
-            is_first_time = False
             if not hasattr(user, 'worker_profile'):
-                is_first_time = True
-                from .models import WorkerProfile
-                worker_profile = WorkerProfile.objects.create(user=user)
-                if hasattr(user, 'customer_profile') and user.customer_profile.profile_photo:
-                    worker_profile.profile_photo = user.customer_profile.profile_photo
-                    worker_profile.save()
-            return Response({"message": "Switched to worker mode.", "active_role": "worker", "is_first_time": is_first_time}, status=status.HTTP_200_OK)
+                return Response({"error": "Worker profile does not exist. Please request to become a worker."}, status=status.HTTP_400_BAD_REQUEST)
+            if user.worker_profile.verification_status != 'approved':
+                return Response({"error": f"Worker profile is {user.worker_profile.verification_status}."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Switched to worker mode.", "active_role": "worker", "is_first_time": False}, status=status.HTTP_200_OK)
         elif role == 'customer':
             return Response({"message": "Switched to customer mode.", "active_role": "customer"}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Invalid role.'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'message': 'Switched to Customer context.'})
 
 class DeleteAccountView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -326,13 +321,22 @@ class WorkerProfileDetailView(views.APIView):
             return Response(WorkerProfileSerializer(profile).data)
         else:
             if not hasattr(request.user, 'worker_profile'):
-                return Response({"error": "No worker profile."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({})
             return Response(WorkerProfileSerializer(request.user.worker_profile).data)
 
     def put(self, request, *args, **kwargs):
         if not hasattr(request.user, 'worker_profile'):
-            return Response({"error": "No worker profile."}, status=status.HTTP_404_NOT_FOUND)
-        profile = request.user.worker_profile
+            from .models import WorkerProfile
+            profile = WorkerProfile.objects.create(user=request.user)
+            if hasattr(request.user, 'customer_profile') and request.user.customer_profile.profile_photo:
+                profile.profile_photo = request.user.customer_profile.profile_photo
+                profile.save()
+        else:
+            profile = request.user.worker_profile
+            if profile.verification_status == 'rejected':
+                profile.verification_status = 'pending'
+                profile.save()
+                
         serializer = WorkerProfileSerializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -434,6 +438,37 @@ class ReviewViewSet(viewsets.ModelViewSet):
         instance.delete()
 from django.db import connection
 from django.core.mail import send_mail
+
+class PendingWorkerRequestsView(views.APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request, *args, **kwargs):
+        from .models import WorkerProfile
+        from .serializers import WorkerProfileSerializer
+        pending_profiles = WorkerProfile.objects.filter(verification_status='pending').order_by('-created_at')
+        return Response(WorkerProfileSerializer(pending_profiles, many=True, context={'request': request}).data)
+
+class ReviewWorkerRequestView(views.APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, *args, **kwargs):
+        from .models import WorkerProfile
+        worker_id = request.data.get('worker_id')
+        action = request.data.get('action') # 'approve' or 'reject'
+        
+        if not worker_id or action not in ['approve', 'reject']:
+            return Response({"error": "Valid worker_id and action ('approve' or 'reject') required."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        from django.shortcuts import get_object_or_404
+        profile = get_object_or_404(WorkerProfile, user__id=worker_id)
+        
+        if action == 'approve':
+            profile.verification_status = 'approved'
+        elif action == 'reject':
+            profile.verification_status = 'rejected'
+            
+        profile.save()
+        return Response({"message": f"Worker profile {profile.verification_status} successfully."})
 
 class ForgotPasswordOTPView(views.APIView):
     permission_classes = [permissions.AllowAny]
