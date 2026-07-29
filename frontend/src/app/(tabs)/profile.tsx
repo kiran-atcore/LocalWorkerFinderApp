@@ -128,10 +128,10 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          {user?.worker_profile_status === 'permanently_rejected' ? (
+          {user?.worker_profile_status === 'permanently_rejected' || user?.is_permanently_banned_from_worker ? (
             <View>
               <Text style={{ color: '#FF6B6B', textAlign: 'center', marginTop: 10, fontWeight: 'bold', fontSize: 16 }}>
-                Permanently rejected
+                Permanently banned from worker mode
               </Text>
             </View>
           ) : user?.worker_profile_status === 'rejected' ? (

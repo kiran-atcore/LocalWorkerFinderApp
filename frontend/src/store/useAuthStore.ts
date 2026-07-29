@@ -9,6 +9,7 @@ export interface User {
   has_worker_profile?: boolean;
   worker_profile_status?: string | null;
   worker_profile_rejection_count?: number;
+  is_permanently_banned_from_worker?: boolean;
   profile_photo?: string | null;
   is_staff?: boolean;
   is_superuser?: boolean;

@@ -78,6 +78,14 @@ export default function AdminDashboard() {
             <Ionicons name="mail-outline" size={14} color="#A0A0A0" style={{ marginRight: 4 }} />
             <Text style={styles.email} numberOfLines={1}>{item.user.email}</Text>
           </View>
+          {item.rejection_count > 0 && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+              <Ionicons name="warning-outline" size={12} color="#FF6B6B" style={{ marginRight: 4 }} />
+              <Text style={{ fontSize: 12, color: '#FF6B6B' }}>
+                Previous Rejections: {item.rejection_count}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
       <View style={styles.cardRight}>

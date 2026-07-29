@@ -7,13 +7,18 @@ class UserSerializer(serializers.ModelSerializer):
     has_worker_profile = serializers.SerializerMethodField()
     worker_profile_status = serializers.SerializerMethodField()
     profile_photo = serializers.SerializerMethodField()
+    is_permanently_banned_from_worker = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'has_worker_profile', 'worker_profile_status', 'profile_photo', 'is_staff', 'is_superuser']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'has_worker_profile', 'worker_profile_status', 'profile_photo', 'is_staff', 'is_superuser', 'is_permanently_banned_from_worker']
 
     def get_has_worker_profile(self, obj):
         return hasattr(obj, 'worker_profile')
+        
+    def get_is_permanently_banned_from_worker(self, obj):
+        from .models import PermanentlyRejectedEmail
+        return PermanentlyRejectedEmail.objects.filter(email=obj.email).exists()
         
     def get_worker_profile_status(self, obj):
         if hasattr(obj, 'worker_profile'):

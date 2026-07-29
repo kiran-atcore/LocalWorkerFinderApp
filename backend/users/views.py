@@ -16,11 +16,6 @@ class RegisterView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
-        from .models import PermanentlyRejectedEmail
-        email = request.data.get('email')
-        if email and PermanentlyRejectedEmail.objects.filter(email=email).exists():
-            return Response({"email": ["This email is permanently banned from registering."]}, status=status.HTTP_400_BAD_REQUEST)
-
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data['email']
@@ -175,9 +170,6 @@ class GoogleLoginView(views.APIView):
             if not email:
                 return Response({"error": "No email provided by Google."}, status=status.HTTP_400_BAD_REQUEST)
 
-            from .models import PermanentlyRejectedEmail
-            if PermanentlyRejectedEmail.objects.filter(email=email).exists():
-                return Response({"error": "This email is permanently banned from registering."}, status=status.HTTP_400_BAD_REQUEST)
 
             user = User.objects.filter(email=email).first()
             if not user:
