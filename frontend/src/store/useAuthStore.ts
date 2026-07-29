@@ -7,7 +7,11 @@ export interface User {
   first_name: string;
   last_name: string;
   has_worker_profile?: boolean;
+  worker_profile_status?: string | null;
+  worker_profile_rejection_count?: number;
   profile_photo?: string | null;
+  is_staff?: boolean;
+  is_superuser?: boolean;
 }
 
 interface AuthState {

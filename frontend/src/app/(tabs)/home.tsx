@@ -75,7 +75,7 @@ function CustomerHomeScreen() {
 
       const fetchWorkers = async () => {
         try {
-          const res = await api.get(`users/featured-workers/?search=${parsedQuery}`);
+          const res = await api.get(`users/workers/featured/?search=${parsedQuery}`);
           setWorkers(res.data);
         } catch (error) {
           console.error('Failed to fetch featured workers:', error);

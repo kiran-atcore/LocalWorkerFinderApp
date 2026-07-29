@@ -70,7 +70,11 @@ export default function LoginScreen() {
       await api.get('users/csrf/');
       const response = await api.post('users/login/', data);
       setAuth(response.data.user);
-      router.replace('/(tabs)/home' as any);
+      if (response.data.user.is_staff) {
+        router.replace(`/AdminDashboard/${response.data.user.id}` as any);
+      } else {
+        router.replace('/(tabs)/home' as any);
+      }
     } catch (error: any) {
       if (error.response?.data?.non_field_errors) {
         setGlobalError(error.response.data.non_field_errors[0]);

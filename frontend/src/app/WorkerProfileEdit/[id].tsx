@@ -32,13 +32,15 @@ export default function WorkerProfileEdit() {
   const fetchProfile = async () => {
     try {
       const response = await api.get('users/worker-profile/');
-      setFullName(`${response.data.user.first_name} ${response.data.user.last_name}`.trim());
-      setBusinessName(response.data.business_name || '');
-      setBio(response.data.bio || '');
-      setSkills(response.data.skills || []);
+      if (response.data && response.data.user) {
+        setFullName(`${response.data.user.first_name || ''} ${response.data.user.last_name || ''}`.trim());
+        setBusinessName(response.data.business_name || '');
+        setBio(response.data.bio || '');
+        setSkills(response.data.skills || []);
 
-      if (response.data.profile_photo) {
-        setPhotoUri(getImageUrl(response.data.profile_photo));
+        if (response.data.profile_photo) {
+          setPhotoUri(getImageUrl(response.data.profile_photo));
+        }
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch worker profile.');
@@ -67,6 +69,10 @@ export default function WorkerProfileEdit() {
   };
 
   const handleSave = async () => {
+    if (user?.worker_profile_status === 'permanently_rejected') {
+      Alert.alert('Error', 'Your profile has been permanently rejected.');
+      return;
+    }
     setIsSaving(true);
     try {
       const formData = new FormData();
@@ -99,13 +105,15 @@ export default function WorkerProfileEdit() {
       if (user) {
         setAuth({
           ...user,
-          first_name: res.data.user.first_name,
-          last_name: res.data.user.last_name,
-          profile_photo: res.data.profile_photo
+          first_name: res.data.user?.first_name || user.first_name,
+          last_name: res.data.user?.last_name || user.last_name,
+          profile_photo: res.data.profile_photo || user.profile_photo,
+          has_worker_profile: true,
+          worker_profile_status: !user.has_worker_profile ? 'pending' : (user.worker_profile_status || 'pending')
         });
       }
 
-      Alert.alert('Success', 'Worker profile updated!', [
+      Alert.alert('Success', 'Profile saved successfully! If this is your first time, please wait for admin approval before switching to worker mode.', [
         { text: 'OK', onPress: () => router.back() }
       ]);
     } catch (error: any) {
@@ -178,7 +186,7 @@ export default function WorkerProfileEdit() {
         </View>
 
         <Pressable style={[styles.saveButton, isSaving && styles.disabled]} onPress={handleSave} disabled={isSaving}>
-          {isSaving ? <ActivityIndicator color="#121212" /> : <Text style={styles.saveButtonText}>Save Changes</Text>}
+          {isSaving ? <ActivityIndicator color="#121212" /> : <Text style={styles.saveButtonText}>{!user?.has_worker_profile ? 'Request Access' : 'Save Changes'}</Text>}
         </Pressable>
         <View style={{ height: 50 }} />
       </ScrollView>

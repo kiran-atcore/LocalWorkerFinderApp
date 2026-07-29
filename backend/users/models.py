@@ -43,8 +43,10 @@ class WorkerProfile(models.Model):
         ('pending', 'Pending'),
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
+        ('permanently_rejected', 'Permanently Rejected'),
     ]
     verification_status = models.CharField(max_length=20, choices=VERIFICATION_STATUS_CHOICES, default='pending')
+    rejection_count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -64,6 +66,9 @@ class BlockedUser(models.Model):
     class Meta:
         unique_together = ('blocker', 'blocked', 'role')
 
+    def __str__(self):
+        return f"{self.blocker.username} blocked {self.blocked.username} as {self.role}"
+
 class UserDevice(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='devices')
     expo_push_token = models.CharField(max_length=255, unique=True)
@@ -73,8 +78,12 @@ class UserDevice(models.Model):
     def __str__(self):
         return f"{self.user.username}'s Device"
 
+class PermanentlyRejectedEmail(models.Model):
+    email = models.EmailField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
     def __str__(self):
-        return f"{self.blocker.username} blocked {self.blocked.username} as {self.role}"
+        return f"Permanently Banned: {self.email}"
 
 class Review(models.Model):
     worker = models.ForeignKey(WorkerProfile, on_delete=models.CASCADE, related_name='reviews')

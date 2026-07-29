@@ -54,8 +54,8 @@ class WorkerProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WorkerProfile
-        fields = ['id', 'user', 'profile_photo', 'business_name', 'bio', 'skills', 'rating', 'total_earnings', 'latitude', 'longitude', 'address_text', 'created_at', 'review_stats', 'has_reviewed', 'verification_status']
-        read_only_fields = ['rating', 'total_earnings', 'verification_status']
+        fields = ['id', 'user', 'profile_photo', 'business_name', 'bio', 'skills', 'rating', 'total_earnings', 'latitude', 'longitude', 'address_text', 'created_at', 'review_stats', 'has_reviewed', 'verification_status', 'rejection_count']
+        read_only_fields = ['rating', 'total_earnings', 'verification_status', 'rejection_count']
 
     def get_review_stats(self, obj):
         reviews = obj.reviews.all()
